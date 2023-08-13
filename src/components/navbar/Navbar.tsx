@@ -1,28 +1,47 @@
+import { useState } from "react";
+import { NavLink } from "react-router-dom";
+import { RxHamburgerMenu } from "react-icons/rx";
 import "./Navbar.scss";
 
 export default function Navbar() {
+  const [showAlgorithms, setShowAlgorithms] = useState(true);
+
   return (
     <nav>
-      <ul>
+      <div className="logo">
+        <NavLink
+          to={`/`}
+          className={({ isActive, isPending }) =>
+            isPending ? "pending" : isActive ? "active" : ""
+          }
+        >
+          Logo
+          <span>Home</span>
+        </NavLink>
+      </div>
+      <ul className={showAlgorithms ? "flex" : "hidden"}>
         <li>
-          <a href={`/`}>Logo</a>
+          <NavLink to={`/duality`}>Dualitate</NavLink>
         </li>
         <li>
-          <a href={`/duality`}>Dualitate</a>
+          <NavLink to={`/convex-hull`}>Acoperire convexa</NavLink>
         </li>
         <li>
-          <a href={`/convex-hull`}>Acoperire convexa</a>
+          <NavLink to={`/triangulation`}>Triangularea poligoanelor</NavLink>
         </li>
         <li>
-          <a href={`/triangulation`}>Triangularea poligoanelor</a>
+          <NavLink to={`/trapezoidal-map`}>Harta trapezoidala</NavLink>
         </li>
         <li>
-          <a href={`/trapezoidal-map`}>Harta trapezoidala</a>
-        </li>
-        <li>
-          <a href={`/voronoi-diagram`}>Diagrama Voronoi</a>
+          <NavLink to={`/voronoi-diagram`}>Diagrama Voronoi</NavLink>
         </li>
       </ul>
+      <div
+        className="hamburger"
+        onClick={() => setShowAlgorithms(!showAlgorithms)}
+      >
+        <RxHamburgerMenu />
+      </div>
     </nav>
   );
 }
