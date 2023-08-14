@@ -1,0 +1,26 @@
+.overlay-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+
+  .text {
+    margin: 0;
+    color: #9c9c9c;
+    user-select: none;
+
+    .action {
+      color: #666;
+      border-bottom: 1px solid #666;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      pointer-events: auto;
+
+      &:hover {
+        color: #222;
+        border-bottom-color: #222;
+      }
+    }
+  }
+}
