@@ -1,13 +1,11 @@
-import { Circle, Layer, Stage } from "react-konva";
+import { Layer, Stage } from "react-konva";
 import "./Canvas.scss";
 import { useEffect, useState } from "react";
 import OverlayText from "./overlay-text/OverlayText";
 import { KonvaEventObject } from "konva/lib/Node";
-
-interface Point {
-  x: number;
-  y: number;
-}
+import { distanceBetweenPoints, generateRandomNumber, getNextPointLetter } from "../../shared/util";
+import { Point } from "../../shared/models/geometry";
+import PointComponent from "./Point";
 
 // A reusable component to be used in every algorithm
 export default function Canvas() {
@@ -37,15 +35,34 @@ export default function Canvas() {
   }, []);
 
   const generateRandomPoints = () => {
-    // generate points ...
-    console.log("generate random points");
+    const points: Point[] = [];
+    
+    for (let i = 0; i < 10; i++) {
+      const x = generateRandomNumber(20, canvasDimensions.width - 20);
+      const y = generateRandomNumber(20, canvasDimensions.height - 20);
+      const label = getNextPointLetter(points[i - 1] ? points[i - 1].label : "");
+      points.push({ x, y, label });
+    }
+    
+    setShowOverlayText(false);
+    setPoints(points);
   };
 
-  const addPoint = (e: KonvaEventObject<MouseEvent>) => {
+  const addPoint = (e: KonvaEventObject<MouseEvent>) => {    
+    const newPoint = {
+      ...e.target.getStage()!.getPointerPosition(),
+      label: getNextPointLetter(points.length > 0 ? points[points.length - 1].label : ""),
+    } as Point;
+    
+    for (const point of points) {
+      if (distanceBetweenPoints(point, newPoint) < 20)
+        return;
+    }
+
     setShowOverlayText(false);
     setPoints((prevPoints) => [
       ...prevPoints,
-      e.target.getStage()!.getPointerPosition() as Point,
+      newPoint,
     ]);
   };
 
@@ -58,13 +75,7 @@ export default function Canvas() {
       >
         <Layer>
           {points.map((point) => (
-            <Circle
-              key={point.x.toString() + point.y.toString()}
-              x={point.x}
-              y={point.y}
-              radius={5}
-              fill="#666"
-            />
+            <PointComponent point={point} key={point.x.toString() + point.y.toString()}/>
           ))}
         </Layer>
       </Stage>
