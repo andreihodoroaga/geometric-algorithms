@@ -6,6 +6,7 @@ import { KonvaEventObject } from "konva/lib/Node";
 import { distanceBetweenPoints, generateRandomNumber, getNextPointLetter } from "../../shared/util";
 import { Point } from "../../shared/models/geometry";
 import PointComponent from "./Point";
+import { determineLowConvexHull } from "../convex-hull/convex-hull-algorithm";
 
 // A reusable component to be used in every algorithm
 export default function Canvas() {
@@ -43,6 +44,11 @@ export default function Canvas() {
       const label = getNextPointLetter(points[i - 1] ? points[i - 1].label : "");
       points.push({ x, y, label });
     }
+
+    console.log(points);
+    // translate points to an axis with origin in the middle of the canvas
+    console.log(determineLowConvexHull(points));
+    
     
     setShowOverlayText(false);
     setPoints(points);
