@@ -1,8 +1,9 @@
 import { KonvaEventObject } from "konva/lib/Node";
 import { useCallback, useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
-import { Point } from "../../shared/models/geometry";
+import { ILine, Point } from "../../shared/models/geometry";
 import {
+  GREY_COLOR,
   distanceBetweenPoints,
   generateRandomNumber,
   getNextPointLetter,
@@ -11,6 +12,8 @@ import "./Canvas.scss";
 import PointComponent from "./Point";
 import OverlayText from "./overlay-text/OverlayText";
 import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
+import { uniqueId } from "lodash";
+import LineComponent from "./Line";
 
 interface CanvasProps {
   points: Point[];
@@ -30,6 +33,7 @@ export default function Canvas({
   });
   const [showOverlayText, setShowOverlayText] = useState(true);
   const [explanations, setExplanations] = useState<string[]>([]);
+  const [lines, setLines] = useState<ILine[]>([]);
 
   // Set the canvas width and height
   useEffect(() => {
@@ -77,7 +81,7 @@ export default function Canvas({
       const label = getNextPointLetter(
         points[i - 1] ? points[i - 1].label : ""
       );
-      points.push({ x, y, label });
+      points.push({ x, y, label, color: GREY_COLOR });
     }
 
     setShowOverlayText(false);
@@ -90,6 +94,7 @@ export default function Canvas({
       label: getNextPointLetter(
         points.length > 0 ? points[points.length - 1].label : ""
       ),
+      color: GREY_COLOR,
     } as Point;
 
     for (const point of points) {
@@ -109,10 +114,10 @@ export default function Canvas({
       >
         <Layer>
           {points.map((point) => (
-            <PointComponent
-              point={point}
-              key={point.x.toString() + point.y.toString()}
-            />
+            <PointComponent point={point} key={uniqueId()} />
+          ))}
+          {lines.map((line) => (
+            <LineComponent line={line} key={uniqueId()} />
           ))}
         </Layer>
       </Stage>
