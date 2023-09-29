@@ -7,7 +7,7 @@ export const CANVAS_COORDINATE_MAX_VALUE =
   POINT_COORDINATE_MAX_VALUE * NUMERIC_UNIT_PIXEL_SIZE;
 export const RED_COLOR = "rgb(153, 24, 24)";
 export const ORANGE_COLOR = "#FF4500";
-export const GREEN_COLOR = "#31695d";
+export const GREEN_COLOR = "green";
 export const LIGHT_GREEN_COLOR = "#52ab98";
 export const BLUE_COLOR = "#2b6777";
 export const GREY_COLOR = "#666";

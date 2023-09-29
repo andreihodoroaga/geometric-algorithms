@@ -2,18 +2,28 @@ import { VisualizationStep } from "../../shared/models/algorithm";
 import { Point } from "../../shared/models/geometry";
 import { ORANGE_COLOR, RED_COLOR } from "../../shared/util";
 
-export const determineLowConvexHull = (points: Point[]) => {
+type ConvexHullPart = "lower" | "upper";
+
+export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) => {
+    if (part === "upper") {
+        points = [...points].reverse();
+    }
+
     const algorithmGraphicIndications: VisualizationStep[] = [];
     let algorithmNumberOfPointsInConvexHull = 0;
-    const lowConvexHull = [points[0], points[1]];
+    const convexHullPart = [points[0], points[1]];
     algorithmNumberOfPointsInConvexHull += 2;
 
-    let stepExplanation = "Punctele au fost sortate lexicografic. Frontiera inferioara este initializata cu punctele " + lowConvexHull[0].label + " si " + lowConvexHull[1].label + ". ";
+    let stepExplanation = "Punctele au fost sortate lexicografic. Frontiera inferioara este initializata cu punctele " + convexHullPart[0].label + " si " + convexHullPart[1].label + ". ";
+    if (part === "upper") {
+        stepExplanation = "Analog, se determina frontiera superioara, care se initializeaza cu punctele " + convexHullPart[0].label + " si " + convexHullPart[1].label + ". ";
+    }
+
     const visualizationStep = {
         explanation: stepExplanation,
         graphicDrawingsStepList: [{
             type: "updateConvexHullList",
-            element: lowConvexHull.slice(),
+            element: convexHullPart.slice(),
         },
         {
             type: "updateNumber",
@@ -40,20 +50,19 @@ export const determineLowConvexHull = (points: Point[]) => {
         } as VisualizationStep;
         algorithmGraphicIndications.push(visualizationStep);
 
-
-        while (lowConvexHull.length >= 2) {
-            const secondLastPoint = lowConvexHull[lowConvexHull.length - 2];
-            const lastPoint = lowConvexHull[lowConvexHull.length - 1];
+        while (convexHullPart.length >= 2) {
+            const secondLastPoint = convexHullPart[convexHullPart.length - 2];
+            const lastPoint = convexHullPart[convexHullPart.length - 1];
             const orientation = calculateOrientationForNormalPoints(secondLastPoint, lastPoint, points[i]);
             if (orientation == 2) {
-                const temporaryLowConvexHull = lowConvexHull.slice();
-                temporaryLowConvexHull.push(points[i]);
+                const temporaryConvexHullPart = convexHullPart.slice();
+                temporaryConvexHullPart.push(points[i]);
                 const visualizationStep = {
                     explanation: "Punctele " + secondLastPoint.label + ", " + lastPoint.label + " si " + points[i].label + " formeaza un viraj la stanga, deci niciun element nu este sters. ",
                     graphicDrawingsStepList: [
                         {
                             type: "updateConvexHullList",
-                            element: temporaryLowConvexHull
+                            element: temporaryConvexHullPart
                         }
                     ]
                 };
@@ -70,16 +79,16 @@ export const determineLowConvexHull = (points: Point[]) => {
                 }
                 stepExplanation += ", deci punctul " + lastPoint.label + " este sters din lista.";
 
-                lowConvexHull.pop();
+                convexHullPart.pop();
                 algorithmNumberOfPointsInConvexHull--;
-                const temporaryLowConvexHull = lowConvexHull.slice();
-                temporaryLowConvexHull.push(points[i]);
+                const temporaryConvexHullPart = convexHullPart.slice();
+                temporaryConvexHullPart.push(points[i]);
                 const visualizationStep = {
                     explanation: stepExplanation,
                     graphicDrawingsStepList: [
                         {
                             type: "updateConvexHullList",
-                            element: temporaryLowConvexHull
+                            element: temporaryConvexHullPart
                         },
                         {
                             type: "line",
@@ -107,13 +116,13 @@ export const determineLowConvexHull = (points: Point[]) => {
                 algorithmGraphicIndications.push(visualizationStep);
             }
         }
-        lowConvexHull.push(points[i]);
+        convexHullPart.push(points[i]);
 
 
         let messageConvexHullList = "Frontiera inferioara contine punctele ";
-        for (let i = 0; i < lowConvexHull.length; i++) {
-            messageConvexHullList += lowConvexHull[i].label;
-            if (i != lowConvexHull.length - 1) {
+        for (let i = 0; i < convexHullPart.length; i++) {
+            messageConvexHullList += convexHullPart[i].label;
+            if (i != convexHullPart.length - 1) {
                 messageConvexHullList += ", "
             }
             else {
@@ -125,7 +134,7 @@ export const determineLowConvexHull = (points: Point[]) => {
             graphicDrawingsStepList: [
                 {
                     type: "updateConvexHullList",
-                    element: lowConvexHull.slice()
+                    element: convexHullPart.slice()
                 }]
         } as VisualizationStep;
         algorithmGraphicIndications.push(visualizationStep);

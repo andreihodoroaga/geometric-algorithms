@@ -11,6 +11,15 @@ export interface ILine {
   dash?: number[];
 }
 
+export const defaultDash = [5, 3];
+
+export const convertPointBetweenAlgorithmAndCanvas = (point: Point) => {
+  return {
+    ...point,
+    y: -point.y,
+  };
+};
+
 export const pointsArray = (p1: Point, p2: Point) => {
   return [p1.x, p1.y, p2.x, p2.y];
 };

@@ -3,14 +3,10 @@ import Canvas from "../canvas/Canvas";
 import "./convex-hull.scss";
 import { Point } from "../../shared/models/geometry";
 import { comparatorPointsByXAscending, sortList } from "../../shared/util";
-import { determineLowConvexHull } from "./convex-hull-algorithm";
-import { VisualizationStep } from "../../shared/models/algorithm";
+import { determineConvexHullPart } from "./convex-hull-algorithm";
 
 export default function ConvexHull() {
   const [points, setPoints] = useState<Point[]>([]);
-  const [lowConvexHullSteps, setLowConvexHullSteps] = useState<
-    VisualizationStep[]
-  >([]);
 
   // points for canvas: origin in top left (and y increasing as you go down)
   // points for algorithm: origin in bottom left (so the alg. gets the points as we see them)
@@ -28,25 +24,19 @@ export default function ConvexHull() {
     return newPoints;
   };
 
-  const startAlgorithm = () => {
+  const computeVisualizationSteps = () => {
     const pointsForAlgorithm = determinePointsForAlgorithm(points);
-    const sortedPointsForAlgorithm = sortList(
-      pointsForAlgorithm,
-      comparatorPointsByXAscending
-    );
+    const sortedPointsForAlgorithm = sortList(pointsForAlgorithm, comparatorPointsByXAscending);
 
-    setLowConvexHullSteps(determineLowConvexHull(sortedPointsForAlgorithm));
+    const lowerConvexHullSteps = determineConvexHullPart(sortedPointsForAlgorithm, "lower");
+    const upperConvexHullSteps = determineConvexHullPart(sortedPointsForAlgorithm, "upper");
+    return [...lowerConvexHullSteps, ...upperConvexHullSteps];
   };
 
   return (
     <>
       <div className="canvas-wrapper">
-        <Canvas
-          points={points}
-          setPoints={setPoints}
-          visualizationSteps={lowConvexHullSteps}
-        />
-        <button onClick={startAlgorithm}>Start Graham Scan</button>
+        <Canvas points={points} setPoints={setPoints} computeVisualizationSteps={computeVisualizationSteps} />
       </div>
     </>
   );

@@ -1,8 +1,15 @@
 import { KonvaEventObject } from "konva/lib/Node";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
-import { ILine, Point } from "../../shared/models/geometry";
 import {
+  ILine,
+  Point,
+  convertPointBetweenAlgorithmAndCanvas,
+  defaultDash,
+  pointsArray,
+} from "../../shared/models/geometry";
+import {
+  GREEN_COLOR,
   GREY_COLOR,
   distanceBetweenPoints,
   generateRandomNumber,
@@ -18,21 +25,21 @@ import LineComponent from "./Line";
 interface CanvasProps {
   points: Point[];
   setPoints: React.Dispatch<React.SetStateAction<Point[]>>;
-  visualizationSteps: VisualizationStep[];
+  computeVisualizationSteps: () => VisualizationStep[];
 }
 
 // A reusable component to be used in every algorithm
 export default function Canvas({
   points,
   setPoints,
-  visualizationSteps,
+  computeVisualizationSteps,
 }: CanvasProps) {
   const [canvasDimensions, setCanvasDimensions] = useState({
     width: 0,
     height: 0,
   });
   const [showOverlayText, setShowOverlayText] = useState(true);
-  const [explanations, setExplanations] = useState<string[]>([]);
+  // const [explanations, setExplanations] = useState<string[]>([]);
   const [lines, setLines] = useState<ILine[]>([]);
 
   // Set the canvas width and height
@@ -53,23 +60,52 @@ export default function Canvas({
     };
   }, []);
 
-  useEffect(() => {
-    // it is usually dangerous to call functions from "outside" useEffect, but useCallback should do the trick
-    showVisualizationSteps();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visualizationSteps]);
-
-  const showVisualizationSteps = useCallback(() => {
-    visualizationSteps.forEach((step) => {
-      setExplanations([...explanations, step.explanation]);
-      addStepDrawings(step.graphicDrawingsStepList);
-    });
-  }, [visualizationSteps, explanations]);
+  function timeout(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
   const addStepDrawings = (drawings: Drawing[]) => {
-    console.log(drawings);
+    for (const drawing of drawings) {
+      const { type, element, style, color } = drawing;
 
-    // do smth with each drawing
+      switch (type) {
+        case "updateNumber":
+          // element = the number of points in the convex hull
+          break;
+        case "updateConvexHullList": {
+          const newLowConvexHullPoints: Point[] = element;
+          // whenever the convex hull changes, update the lines and points too
+          for (const point of newLowConvexHullPoints) {
+            const canvasPoint = convertPointBetweenAlgorithmAndCanvas(point);
+            const currentPoint = points.find(
+              (p) => p.label === canvasPoint.label
+            );
+            if (currentPoint?.color !== GREEN_COLOR)
+              updatePointStyle(canvasPoint, GREEN_COLOR);
+          }
+          break;
+        }
+        case "line": {
+          let [startPoint, endPoint] = element as Point[];
+          startPoint = convertPointBetweenAlgorithmAndCanvas(startPoint);
+          endPoint = convertPointBetweenAlgorithmAndCanvas(endPoint);
+          const newLine: ILine = {
+            points: pointsArray(startPoint, endPoint),
+            color: color!,
+            ...(style === "dash" && { dash: defaultDash }),
+          };
+          setLines((lines) => [...lines, newLine]);
+          break;
+        }
+        case "point": {
+          const canvasPoint = convertPointBetweenAlgorithmAndCanvas(
+            element as Point
+          );
+          updatePointStyle(canvasPoint, color!);
+          break;
+        }
+      }
+    }
   };
 
   const generateRandomPoints = () => {
@@ -105,25 +141,60 @@ export default function Canvas({
     setPoints((prevPoints) => [...prevPoints, newPoint]);
   };
 
+  const updatePointStyle = (point: Point, color: string) => {
+    const newPoint = { ...point, color };
+    setPoints((points) => {
+      const pointIndex = points.findIndex((p) => p.label === point.label);
+      const updatedPoints = [...points];
+      updatedPoints[pointIndex] = newPoint;
+
+      return updatedPoints;
+    });
+  };
+
+  const cleanUpCanvas = () => {
+    setPoints((points) =>
+      points.map((p) =>
+        p.color === GREEN_COLOR ? p : { ...p, color: GREY_COLOR }
+      )
+    );
+    setLines(lines.map((l) => (l.dash ? l : { ...l, dash: [] })));
+  };
+
+  const startAlgorithm = async () => {
+    const steps = computeVisualizationSteps();
+
+    for (const step of steps) {
+      // at every new step we should keep on the canvas only some points / lines
+      // for now, keeping only the green ones should do
+      cleanUpCanvas();
+      addStepDrawings(step.graphicDrawingsStepList);
+      await timeout(1000);
+    }
+  };
+
   return (
-    <div className="canvas-component">
-      <Stage
-        width={canvasDimensions.width}
-        height={canvasDimensions.height}
-        onClick={(e) => addPoint(e)}
-      >
-        <Layer>
-          {points.map((point) => (
-            <PointComponent point={point} key={uniqueId()} />
-          ))}
-          {lines.map((line) => (
-            <LineComponent line={line} key={uniqueId()} />
-          ))}
-        </Layer>
-      </Stage>
-      {showOverlayText && (
-        <OverlayText generateRandomPoints={generateRandomPoints} />
-      )}
-    </div>
+    <>
+      <div className="canvas-component">
+        <Stage
+          width={canvasDimensions.width}
+          height={canvasDimensions.height}
+          onClick={(e) => addPoint(e)}
+        >
+          <Layer>
+            {points.map((point) => (
+              <PointComponent point={point} key={uniqueId()} />
+            ))}
+            {lines.map((line) => (
+              <LineComponent line={line} key={uniqueId()} />
+            ))}
+          </Layer>
+        </Stage>
+        {showOverlayText && (
+          <OverlayText generateRandomPoints={generateRandomPoints} />
+        )}
+      </div>
+      <button onClick={startAlgorithm}>Start Graham Scan</button>
+    </>
   );
 }
