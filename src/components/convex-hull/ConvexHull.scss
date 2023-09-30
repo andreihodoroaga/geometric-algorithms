@@ -1,7 +1,14 @@
 .convex-hull-container {
-  height: 80vh;
-}
+  display: flex;
+  height: 70vh;
 
-.canvas-container {
-  height: 100%;
+  .canvas-wrapper {
+    width: 70%;
+  }
+
+  .explanations-wrapper {
+    overflow-y: auto;
+    margin-top: 3rem;
+    width: 30%;
+  }
 }

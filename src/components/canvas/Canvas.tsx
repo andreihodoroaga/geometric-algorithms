@@ -26,14 +26,11 @@ interface CanvasProps {
   points: Point[];
   setPoints: React.Dispatch<React.SetStateAction<Point[]>>;
   computeVisualizationSteps: () => VisualizationStep[];
+  setExplanations: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 // A reusable component to be used in every algorithm
-export default function Canvas({
-  points,
-  setPoints,
-  computeVisualizationSteps,
-}: CanvasProps) {
+export default function Canvas({ points, setPoints, computeVisualizationSteps, setExplanations }: CanvasProps) {
   const [canvasDimensions, setCanvasDimensions] = useState({
     width: 0,
     height: 0,
@@ -77,11 +74,8 @@ export default function Canvas({
           // whenever the convex hull changes, update the lines and points too
           for (const point of newLowConvexHullPoints) {
             const canvasPoint = convertPointBetweenAlgorithmAndCanvas(point);
-            const currentPoint = points.find(
-              (p) => p.label === canvasPoint.label
-            );
-            if (currentPoint?.color !== GREEN_COLOR)
-              updatePointStyle(canvasPoint, GREEN_COLOR);
+            const currentPoint = points.find((p) => p.label === canvasPoint.label);
+            if (currentPoint?.color !== GREEN_COLOR) updatePointStyle(canvasPoint, GREEN_COLOR);
           }
           break;
         }
@@ -98,9 +92,7 @@ export default function Canvas({
           break;
         }
         case "point": {
-          const canvasPoint = convertPointBetweenAlgorithmAndCanvas(
-            element as Point
-          );
+          const canvasPoint = convertPointBetweenAlgorithmAndCanvas(element as Point);
           updatePointStyle(canvasPoint, color!);
           break;
         }
@@ -114,9 +106,7 @@ export default function Canvas({
     for (let i = 0; i < 10; i++) {
       const x = generateRandomNumber(20, canvasDimensions.width - 20);
       const y = generateRandomNumber(20, canvasDimensions.height - 20);
-      const label = getNextPointLetter(
-        points[i - 1] ? points[i - 1].label : ""
-      );
+      const label = getNextPointLetter(points[i - 1] ? points[i - 1].label : "");
       points.push({ x, y, label, color: GREY_COLOR });
     }
 
@@ -127,9 +117,7 @@ export default function Canvas({
   const addPoint = (e: KonvaEventObject<MouseEvent>) => {
     const newPoint = {
       ...e.target.getStage()!.getPointerPosition(),
-      label: getNextPointLetter(
-        points.length > 0 ? points[points.length - 1].label : ""
-      ),
+      label: getNextPointLetter(points.length > 0 ? points[points.length - 1].label : ""),
       color: GREY_COLOR,
     } as Point;
 
@@ -153,11 +141,7 @@ export default function Canvas({
   };
 
   const cleanUpCanvas = () => {
-    setPoints((points) =>
-      points.map((p) =>
-        p.color === GREEN_COLOR ? p : { ...p, color: GREY_COLOR }
-      )
-    );
+    setPoints((points) => points.map((p) => (p.color === GREEN_COLOR ? p : { ...p, color: GREY_COLOR })));
     setLines(lines.map((l) => (l.dash ? l : { ...l, dash: [] })));
   };
 
@@ -165,6 +149,7 @@ export default function Canvas({
     const steps = computeVisualizationSteps();
 
     for (const step of steps) {
+      setExplanations((explanations) => [...explanations, step.explanation]);
       // at every new step we should keep on the canvas only some points / lines
       // for now, keeping only the green ones should do
       cleanUpCanvas();
@@ -176,11 +161,7 @@ export default function Canvas({
   return (
     <>
       <div className="canvas-component">
-        <Stage
-          width={canvasDimensions.width}
-          height={canvasDimensions.height}
-          onClick={(e) => addPoint(e)}
-        >
+        <Stage width={canvasDimensions.width} height={canvasDimensions.height} onClick={(e) => addPoint(e)}>
           <Layer>
             {points.map((point) => (
               <PointComponent point={point} key={uniqueId()} />
@@ -190,9 +171,7 @@ export default function Canvas({
             ))}
           </Layer>
         </Stage>
-        {showOverlayText && (
-          <OverlayText generateRandomPoints={generateRandomPoints} />
-        )}
+        {showOverlayText && <OverlayText generateRandomPoints={generateRandomPoints} />}
       </div>
       <button onClick={startAlgorithm}>Start Graham Scan</button>
     </>

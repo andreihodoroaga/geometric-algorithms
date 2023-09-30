@@ -1,0 +1,21 @@
+.explanations-container {
+  min-height: 100%;
+  padding: 0.5rem 0.25rem;
+  background-color: #f7f7f7;
+
+  .explanations-title {
+    margin: 0;
+    margin-bottom: 0.75rem;
+    text-align: center;
+    font-size: 1.125rem;
+  }
+
+  .explanation {
+    margin: 0.5rem;
+    color: #666;
+
+    &.last {
+      color: #000;
+    }
+  }
+}

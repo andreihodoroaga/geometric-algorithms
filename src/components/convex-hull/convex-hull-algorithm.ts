@@ -118,8 +118,7 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
         }
         convexHullPart.push(points[i]);
 
-
-        let messageConvexHullList = "Frontiera inferioara contine punctele ";
+        let messageConvexHullList = `Frontiera ${part === "lower" ? "inferioara" : "superioara"} contine punctele `;
         for (let i = 0; i < convexHullPart.length; i++) {
             messageConvexHullList += convexHullPart[i].label;
             if (i != convexHullPart.length - 1) {
