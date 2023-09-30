@@ -21,6 +21,7 @@ import OverlayText from "./overlay-text/OverlayText";
 import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
 import { uniqueId } from "lodash";
 import LineComponent from "./Line";
+import Button from "../button/Button";
 
 interface CanvasProps {
   points: Point[];
@@ -173,7 +174,7 @@ export default function Canvas({ points, setPoints, computeVisualizationSteps, s
         </Stage>
         {showOverlayText && <OverlayText generateRandomPoints={generateRandomPoints} />}
       </div>
-      <button onClick={startAlgorithm}>Start Graham Scan</button>
+      <Button onClick={startAlgorithm} content={"Start"} extraClass="primary" />
     </>
   );
 }
