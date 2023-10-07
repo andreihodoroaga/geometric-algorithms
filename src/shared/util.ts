@@ -3,8 +3,7 @@ import { Point } from "./models/geometry";
 export const POINT_RADIUS = 5;
 export const POINT_COORDINATE_MAX_VALUE = 50;
 export const NUMERIC_UNIT_PIXEL_SIZE = 20;
-export const CANVAS_COORDINATE_MAX_VALUE =
-  POINT_COORDINATE_MAX_VALUE * NUMERIC_UNIT_PIXEL_SIZE;
+export const CANVAS_COORDINATE_MAX_VALUE = POINT_COORDINATE_MAX_VALUE * NUMERIC_UNIT_PIXEL_SIZE;
 export const RED_COLOR = "rgb(153, 24, 24)";
 export const ORANGE_COLOR = "#FF4500";
 export const GREEN_COLOR = "green";
@@ -39,9 +38,7 @@ export const getNextPointLetter = (lastPointLetter: string) => {
       const lastChar = lastPointLetter.slice(-1);
       const sub = lastPointLetter.slice(0, -1);
       if (lastChar === "Z" || lastChar === "z") {
-        nextPointLetter =
-          getNextPointLetter(sub) +
-          String.fromCharCode(lastChar.charCodeAt(0) - 25);
+        nextPointLetter = getNextPointLetter(sub) + String.fromCharCode(lastChar.charCodeAt(0) - 25);
       } else {
         nextPointLetter = sub + String.fromCharCode(lastChar.charCodeAt(0) + 1);
       }
@@ -59,10 +56,7 @@ export const sortList = (list: Point[], comparator: ComparatorFn) => {
   return sortedList;
 };
 
-export const comparatorPointsByYDescending: ComparatorFn = (
-  firstPoint: Point,
-  secondPoint: Point
-) => {
+export const comparatorPointsByYDescending: ComparatorFn = (firstPoint: Point, secondPoint: Point) => {
   if (firstPoint.y > secondPoint.y) return -1;
   if (firstPoint.y < secondPoint.y) return 1;
   if (firstPoint.x < secondPoint.x) return -1;
@@ -70,13 +64,20 @@ export const comparatorPointsByYDescending: ComparatorFn = (
   return 0;
 };
 
-export const comparatorPointsByXAscending: ComparatorFn = (
-  firstPoint: Point,
-  secondPoint: Point
-) => {
+export const comparatorPointsByXAscending: ComparatorFn = (firstPoint: Point, secondPoint: Point) => {
   if (firstPoint.x < secondPoint.x) return -1;
   if (firstPoint.x > secondPoint.x) return 1;
   if (firstPoint.y < secondPoint.y) return -1;
   if (firstPoint.y > secondPoint.y) return 1;
   return 0;
+};
+
+export const getPairsFromArray = <T>(arr: T[]) => {
+  const outputArr = [];
+
+  for (let i = 0; i < arr.length - 1; i++) {
+    outputArr.push([arr[i], arr[i + 1]]);
+  }
+
+  return outputArr;
 };

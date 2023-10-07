@@ -1,8 +1,30 @@
 import { VisualizationStep } from "../../shared/models/algorithm";
-import { Point } from "../../shared/models/geometry";
+import { Point, convertPointBetweenAlgorithmAndCanvas } from "../../shared/models/geometry";
 import { ORANGE_COLOR, RED_COLOR } from "../../shared/util";
 
 type ConvexHullPart = "lower" | "upper";
+
+const getFinalConvexHullPart = (partVisualizationSteps: VisualizationStep[]) => {
+    const lastLowerConvexHullStep = partVisualizationSteps[partVisualizationSteps.length - 1];
+    return lastLowerConvexHullStep.graphicDrawingsStepList[0].element.map((point: Point) => convertPointBetweenAlgorithmAndCanvas(point));
+}
+
+export const computeGrahamScanSteps = (sortedPoints: Point[]) => {
+    const lowerConvexHullSteps = determineConvexHullPart(sortedPoints, "lower");
+    const upperConvexHullSteps = determineConvexHullPart(sortedPoints, "upper");
+
+    const lowerConvexHull = getFinalConvexHullPart(lowerConvexHullSteps);
+    const upperConvexHull = getFinalConvexHullPart(upperConvexHullSteps);
+    const lastStep = {
+        explanation: "Acoperirea convexa este completa.",
+        graphicDrawingsStepList: [{
+            type: "finalStep",
+            element: [...lowerConvexHull, ...upperConvexHull],
+        }]
+    }
+
+    return [...lowerConvexHullSteps, ...upperConvexHullSteps, lastStep];
+}
 
 export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) => {
     if (part === "upper") {

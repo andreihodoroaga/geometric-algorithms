@@ -3,7 +3,7 @@ import Canvas from "../canvas/Canvas";
 import "./ConvexHull.scss";
 import { Point } from "../../shared/models/geometry";
 import { comparatorPointsByXAscending, sortList } from "../../shared/util";
-import { determineConvexHullPart } from "./convex-hull-algorithm";
+import { computeGrahamScanSteps } from "./convex-hull-algorithm";
 import Explanations from "../explanations/Explanations";
 import Button from "../button/Button";
 
@@ -32,9 +32,8 @@ export default function ConvexHull() {
     const pointsForAlgorithm = determinePointsForAlgorithm(points);
     const sortedPointsForAlgorithm = sortList(pointsForAlgorithm, comparatorPointsByXAscending);
 
-    const lowerConvexHullSteps = determineConvexHullPart(sortedPointsForAlgorithm, "lower");
-    const upperConvexHullSteps = determineConvexHullPart(sortedPointsForAlgorithm, "upper");
-    return [...lowerConvexHullSteps, ...upperConvexHullSteps];
+    const grahamScanSteps = computeGrahamScanSteps(sortedPointsForAlgorithm);
+    return grahamScanSteps;
   };
 
   return (

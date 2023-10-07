@@ -14,6 +14,7 @@ import {
   distanceBetweenPoints,
   generateRandomNumber,
   getNextPointLetter,
+  getPairsFromArray,
 } from "../../shared/util";
 import "./Canvas.scss";
 import PointComponent from "./Point";
@@ -43,7 +44,6 @@ export default function Canvas({
     height: 0,
   });
   const [showOverlayText, setShowOverlayText] = useState(true);
-  // const [explanations, setExplanations] = useState<string[]>([]);
   const [lines, setLines] = useState<ILine[]>([]);
 
   // Set the canvas width and height
@@ -83,13 +83,7 @@ export default function Canvas({
           // element = the number of points in the convex hull
           break;
         case "updateConvexHullList": {
-          const newLowConvexHullPoints: Point[] = element;
-          // whenever the convex hull changes, update the lines and points too
-          for (const point of newLowConvexHullPoints) {
-            const canvasPoint = convertPointBetweenAlgorithmAndCanvas(point);
-            const currentPoint = points.find((p) => p.label === canvasPoint.label);
-            if (currentPoint?.color !== GREEN_COLOR) updatePointStyle(canvasPoint, GREEN_COLOR);
-          }
+          convexHullUpdatedHandler(element as Point[]);
           break;
         }
         case "line": {
@@ -101,13 +95,17 @@ export default function Canvas({
             color: color!,
             ...(style === "dash" && { dash: defaultDash }),
           };
-          setLines((lines) => [...lines, newLine]);
+          setLines((prevLines) => [...prevLines, newLine]);
           break;
         }
         case "point": {
           const canvasPoint = convertPointBetweenAlgorithmAndCanvas(element as Point);
           updatePointStyle(canvasPoint, color!);
           break;
+        }
+        case "finalStep": {
+          element.forEach((point: Point) => updatePointStyle(point, GREEN_COLOR));
+          setLines(getLinesFromPoints(element));
         }
       }
     }
@@ -153,9 +151,56 @@ export default function Canvas({
     });
   };
 
+  const resetAllPointsColor = () => {
+    setPoints((points) =>
+      points.map((point) => ({
+        ...point,
+        color: GREY_COLOR,
+      }))
+    );
+  };
+
+  const convexHullUpdatedHandler = (newConvexHullPoints: Point[]) => {
+    resetAllPointsColor();
+
+    const canvasPoints = [];
+    for (const point of newConvexHullPoints) {
+      const canvasPoint = convertPointBetweenAlgorithmAndCanvas(point);
+      canvasPoints.push(canvasPoint);
+      const currentPoint = points.find((p) => p.label === canvasPoint.label);
+      if (currentPoint?.color !== GREEN_COLOR) {
+        updatePointStyle(canvasPoint, GREEN_COLOR);
+      }
+    }
+
+    setLines(getLinesFromPoints(canvasPoints));
+  };
+
+  const getLinesFromPoints = (points: Point[]) => {
+    const pointPairs = getPairsFromArray(points);
+
+    const lines = pointPairs.map(
+      (pointPair) =>
+        ({
+          points: pointsArray(pointPair[0], pointPair[1]),
+          color: GREEN_COLOR,
+        } as ILine)
+    );
+
+    return lines;
+  }
+
   const cleanUpCanvas = () => {
-    setPoints((points) => points.map((p) => (p.color === GREEN_COLOR ? p : { ...p, color: GREY_COLOR })));
-    setLines(lines.map((l) => (l.dash ? l : { ...l, dash: [] })));
+    setPoints((points) =>
+      points.map((p) => ({
+        ...p,
+        color: p.color === GREEN_COLOR ? GREEN_COLOR : GREY_COLOR,
+      }))
+    );
+
+    setLines((prevLines) =>
+      prevLines.filter((l) => l.color === GREEN_COLOR).map((l) => (l.dash ? l : { ...l, dash: [] }))
+    );
   };
 
   const startAlgorithm = async () => {
