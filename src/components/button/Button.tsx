@@ -2,7 +2,7 @@ import "./Button.scss";
 import { AiFillCaretDown } from "react-icons/ai";
 
 interface ButtonProps {
-  onClick: () => Promise<void>;
+  onClick: () => void;
   content: string;
   extraClass?: string;
   dropdownBtn?: boolean;

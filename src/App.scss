@@ -1,0 +1,25 @@
+.main-container {
+  height: calc(100vh - 70px);
+  padding: 2rem;
+  display: grid;
+  grid-template-areas:
+    "canvas panel"
+    "canvas explanations"
+    "controls .";
+  grid-template-columns: 2.25fr 1fr;
+  grid-template-rows: 60px auto 40px;
+  grid-column-gap: 2rem;
+}
+
+.canvas-wrapper {
+  grid-area: canvas;
+}
+
+.explanations-wrapper {
+  grid-area: explanations;
+  overflow-y: auto;
+}
+
+.panel-wrapper {
+  grid-area: panel;
+}

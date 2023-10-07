@@ -9,7 +9,7 @@ function App() {
   return (
     <>
       <Navbar />
-      <div>{outlet || <Home />}</div>
+      <div className="main-container">{outlet || <Home />}</div>
     </>
   );
 }

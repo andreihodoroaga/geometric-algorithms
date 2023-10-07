@@ -21,17 +21,23 @@ import OverlayText from "./overlay-text/OverlayText";
 import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
 import { uniqueId } from "lodash";
 import LineComponent from "./Line";
-import Button from "../button/Button";
 
 interface CanvasProps {
   points: Point[];
   setPoints: React.Dispatch<React.SetStateAction<Point[]>>;
   computeVisualizationSteps: () => VisualizationStep[];
   setExplanations: React.Dispatch<React.SetStateAction<string[]>>;
+  algorithmStarted: boolean;
 }
 
 // A reusable component to be used in every algorithm
-export default function Canvas({ points, setPoints, computeVisualizationSteps, setExplanations }: CanvasProps) {
+export default function Canvas({
+  points,
+  setPoints,
+  computeVisualizationSteps,
+  setExplanations,
+  algorithmStarted,
+}: CanvasProps) {
   const [canvasDimensions, setCanvasDimensions] = useState({
     width: 0,
     height: 0,
@@ -57,6 +63,12 @@ export default function Canvas({ points, setPoints, computeVisualizationSteps, s
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  useEffect(() => {
+    if (algorithmStarted) {
+      startAlgorithm();
+    }
+  }, [algorithmStarted]);
 
   function timeout(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -174,7 +186,6 @@ export default function Canvas({ points, setPoints, computeVisualizationSteps, s
         </Stage>
         {showOverlayText && <OverlayText generateRandomPoints={generateRandomPoints} />}
       </div>
-      <Button onClick={startAlgorithm} content={"Start"} extraClass="primary" />
     </>
   );
 }
