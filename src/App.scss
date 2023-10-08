@@ -16,10 +16,14 @@
 }
 
 .explanations-wrapper {
+  margin-top: 1rem;
   grid-area: explanations;
   overflow-y: auto;
 }
 
 .panel-wrapper {
   grid-area: panel;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }

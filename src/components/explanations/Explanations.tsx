@@ -3,9 +3,10 @@ import "./Explanations.scss";
 
 interface ExplanationsProps {
   explanations: string[];
+  algorithm: string;
 }
 
-export default function Explanations({ explanations }: ExplanationsProps) {
+export default function Explanations({ explanations, algorithm }: ExplanationsProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -21,7 +22,7 @@ export default function Explanations({ explanations }: ExplanationsProps) {
 
   return (
     <div className="explanations-container">
-      <h2 className="explanations-title">Pasi executie algoritm</h2>
+      <h2 className="explanations-title">Pasi executie {algorithm}</h2>
       <div className="explanation-list">
         {explanations.map((explanation, idx) => (
           <p key={idx} className={`explanation ${idx === explanations.length - 1 ? "last" : ""}`}>
