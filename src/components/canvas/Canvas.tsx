@@ -2,6 +2,7 @@ import { KonvaEventObject } from "konva/lib/Node";
 import { useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
 import {
+  DEFAULT_POINT_SIZE,
   ILine,
   Point,
   convertPointBetweenAlgorithmAndCanvas,
@@ -11,6 +12,7 @@ import {
 import {
   GREEN_COLOR,
   GREY_COLOR,
+  ORANGE_COLOR,
   distanceBetweenPoints,
   generateRandomNumber,
   getNextPointLetter,
@@ -76,7 +78,7 @@ export default function Canvas({
 
   const addStepDrawings = (drawings: Drawing[]) => {
     for (const drawing of drawings) {
-      const { type, element, style, color } = drawing;
+      const { type, element, style, color, size } = drawing;
 
       switch (type) {
         case "updateNumber":
@@ -100,7 +102,7 @@ export default function Canvas({
         }
         case "point": {
           const canvasPoint = convertPointBetweenAlgorithmAndCanvas(element as Point);
-          updatePointStyle(canvasPoint, color!);
+          updatePointStyle(canvasPoint, color!, size);
           break;
         }
         case "finalStep": {
@@ -140,8 +142,8 @@ export default function Canvas({
     setPoints((prevPoints) => [...prevPoints, newPoint]);
   };
 
-  const updatePointStyle = (point: Point, color: string) => {
-    const newPoint = { ...point, color };
+  const updatePointStyle = (point: Point, color: string, size?: number) => {
+    const newPoint = { ...point, color, size: size ? size : point.size };
     setPoints((points) => {
       const pointIndex = points.findIndex((p) => p.label === point.label);
       const updatedPoints = [...points];
@@ -188,18 +190,21 @@ export default function Canvas({
     );
 
     return lines;
-  }
+  };
 
   const cleanUpCanvas = () => {
     setPoints((points) =>
       points.map((p) => ({
         ...p,
-        color: p.color === GREEN_COLOR ? GREEN_COLOR : GREY_COLOR,
+        color: p.color === GREEN_COLOR || p.color === ORANGE_COLOR ? p.color : GREY_COLOR,
+        size: DEFAULT_POINT_SIZE,
       }))
     );
 
     setLines((prevLines) =>
-      prevLines.filter((l) => l.color === GREEN_COLOR).map((l) => (l.dash ? l : { ...l, dash: [] }))
+      prevLines
+        .filter((l) => l.color === GREEN_COLOR || l.color === ORANGE_COLOR)
+        .map((l) => (l.dash ? l : { ...l, dash: [] }))
     );
   };
 
@@ -209,7 +214,7 @@ export default function Canvas({
     for (const step of steps) {
       setExplanations((explanations) => [...explanations, step.explanation]);
       // at every new step we should keep on the canvas only some points / lines
-      // for now, keeping only the green ones should do
+      // for now, keeping only the green points and lines + orange points (jarvis march) should do
       cleanUpCanvas();
       addStepDrawings(step.graphicDrawingsStepList);
       await timeout(1000);

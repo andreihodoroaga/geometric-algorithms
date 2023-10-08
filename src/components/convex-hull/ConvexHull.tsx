@@ -3,7 +3,7 @@ import Canvas from "../canvas/Canvas";
 import "./ConvexHull.scss";
 import { Point } from "../../shared/models/geometry";
 import { comparatorPointsByXAscending, sortList } from "../../shared/util";
-import { computeGrahamScanSteps } from "./convex-hull-algorithm";
+import { computeGrahamScanSteps, computeJarvisMarchExecutionSteps } from "./convex-hull-algorithm";
 import Explanations from "../explanations/Explanations";
 import Button from "../button/Button";
 import { Menu, MenuItem } from "@szhsin/react-menu";
@@ -41,8 +41,10 @@ export default function ConvexHull() {
     const pointsForAlgorithm = determinePointsForAlgorithm(points);
     const sortedPointsForAlgorithm = sortList(pointsForAlgorithm, comparatorPointsByXAscending);
 
-    const grahamScanSteps = computeGrahamScanSteps(sortedPointsForAlgorithm);
-    return grahamScanSteps;
+    if (selectedAlgorithm === ConvexHullAlgorithms.GrahamScan) {
+      return computeGrahamScanSteps(sortedPointsForAlgorithm);
+    }
+    return computeJarvisMarchExecutionSteps(pointsForAlgorithm);
   };
 
   return (

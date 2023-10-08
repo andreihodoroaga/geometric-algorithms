@@ -4,6 +4,7 @@ export interface Drawing {
   element: any;
   style?: string;
   color?: string;
+  size?: number;
 }
 
 export interface VisualizationStep {
