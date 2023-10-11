@@ -26,7 +26,7 @@ export const computeGrahamScanSteps = (sortedPoints: Point[]) => {
 
   const lowerConvexHull = getFinalConvexHullPart(lowerConvexHullSteps);
   const upperConvexHull = getFinalConvexHullPart(upperConvexHullSteps);
-  const lastStep = {
+  const lastStep: VisualizationStep = {
     explanation: "Acoperirea convexa este completa.",
     graphicDrawingsStepList: [
       {
