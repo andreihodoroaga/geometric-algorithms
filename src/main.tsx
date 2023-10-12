@@ -15,16 +15,16 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       {
-        path: "duality",
-        element: <Duality />,
-      },
-      {
         path: "convex-hull",
         element: <ConvexHull />,
       },
       {
         path: "triangulation",
         element: <Triangulation />,
+      },
+      {
+        path: "duality",
+        element: <Duality />,
       },
       {
         path: "trapezoidal-map",
