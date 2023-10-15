@@ -19,9 +19,9 @@ export default function ConvexHull() {
 
   const computeVisualizationSteps = (points: Point[]) => {
     const pointsForAlgorithm = determinePointsForAlgorithm(points);
-    const sortedPointsForAlgorithm = sortList(pointsForAlgorithm, comparatorPointsByXAscending);
-
+    
     if (selectedAlgorithm === ConvexHullAlgorithms.GrahamScan) {
+      const sortedPointsForAlgorithm = sortList(pointsForAlgorithm, comparatorPointsByXAscending);
       return computeGrahamScanSteps(sortedPointsForAlgorithm);
     }
     return computeJarvisMarchExecutionSteps(pointsForAlgorithm);
