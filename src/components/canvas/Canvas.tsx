@@ -1,26 +1,30 @@
 import { useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
-import { ILine, Point } from "../../shared/models/geometry";
+import { ILine, Point, pointsArray } from "../../shared/models/geometry";
 import { GREY_COLOR, distanceBetweenPoints, generateRandomNumber, getNextPointLetter } from "../../shared/util";
 import "./Canvas.scss";
 import PointComponent from "./Point";
 import OverlayText from "./overlay-text/OverlayText";
-import { uniqueId } from "lodash";
+import { find, isEqual, uniqueId } from "lodash";
 import LineComponent from "./Line";
 import { KonvaEventObject } from "konva/lib/Node";
+import { Vector2d } from "konva/lib/types";
 
 interface CanvasProps {
   points: Point[];
   setPoints: React.Dispatch<React.SetStateAction<Point[]>>;
   lines: ILine[];
+  setLines: React.Dispatch<React.SetStateAction<ILine[]>>;
+  polygonMode?: boolean;
 }
 
-export default function Canvas({ points, setPoints, lines }: CanvasProps) {
+export default function Canvas({ points, setPoints, lines, setLines, polygonMode }: CanvasProps) {
   const [canvasDimensions, setCanvasDimensions] = useState({
     width: 0,
     height: 0,
   });
   const [showOverlayText, setShowOverlayText] = useState(true);
+  const [closedPolygon, setClosedPolygon] = useState(false);
 
   // Set the canvas width and height
   useEffect(() => {
@@ -54,15 +58,53 @@ export default function Canvas({ points, setPoints, lines }: CanvasProps) {
     setPoints(points);
   };
 
-  const addPoint = (e: KonvaEventObject<MouseEvent>) => {
-    const newPoint = {
-      ...e.target.getStage()!.getPointerPosition(),
+  const addPolygonLine = (newPoint: Point) => {
+    const lastPoint = points[points.length - 1];
+    const nextPoint = checkClosePoint(newPoint) ?? newPoint;    
+
+    if (find(points, point => point.label === nextPoint.label)) {
+      if (!isEqual(nextPoint, points[0])) {
+        return;
+      }
+      setClosedPolygon(true);
+    }
+
+    const newLine: ILine = {
+      points: pointsArray(lastPoint, nextPoint),
+      color: GREY_COLOR,
+    };
+    setLines((prevLines) => [...prevLines, newLine]);
+  };
+
+  const checkClosePoint = (newPoint: Point) => {
+    for (const point of points) {
+      if (distanceBetweenPoints(point, newPoint) < 20) {
+        return point;
+      }
+    }
+    return null;
+  };
+
+  const getNextPoint = (position: Vector2d) => {
+    return {
+      ...position,
       label: getNextPointLetter(points.length > 0 ? points[points.length - 1].label : ""),
       color: GREY_COLOR,
     } as Point;
+  };
 
-    for (const point of points) {
-      if (distanceBetweenPoints(point, newPoint) < 20) return;
+  const handleCanvasClick = (e: KonvaEventObject<MouseEvent>) => {
+    if (closedPolygon) {
+      return;
+    }
+
+    const newPoint = getNextPoint(e.target.getStage()!.getPointerPosition()!);
+
+    if (polygonMode && points.length > 0) {
+      addPolygonLine(newPoint);
+    }
+    if (checkClosePoint(newPoint)) {
+      return;
     }
 
     setShowOverlayText(false);
@@ -71,7 +113,7 @@ export default function Canvas({ points, setPoints, lines }: CanvasProps) {
 
   return (
     <div className="canvas-component">
-      <Stage width={canvasDimensions.width} height={canvasDimensions.height} onClick={(e) => addPoint(e)}>
+      <Stage width={canvasDimensions.width} height={canvasDimensions.height} onClick={(e) => handleCanvasClick(e)}>
         <Layer>
           {points.map((point) => (
             <PointComponent point={point} key={uniqueId()} />
@@ -81,7 +123,7 @@ export default function Canvas({ points, setPoints, lines }: CanvasProps) {
           ))}
         </Layer>
       </Stage>
-      {showOverlayText && <OverlayText generateRandomPoints={generateRandomPoints} />}
+      {showOverlayText && <OverlayText polygonMode={polygonMode} generateRandomPoints={generateRandomPoints} />}
     </div>
   );
 }

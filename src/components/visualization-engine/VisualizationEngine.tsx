@@ -17,6 +17,7 @@ interface VisualizationEngineProps {
   computeVisualizationSteps: (points: Point[]) => VisualizationStep[];
   explanationsTitle: string;
   children: React.ReactNode;
+  polygonMode?: boolean;
 }
 
 // A reusable component to be used in every algorithm
@@ -24,6 +25,7 @@ export default function VisualizationEngine({
   computeVisualizationSteps,
   explanationsTitle,
   children,
+  polygonMode,
 }: VisualizationEngineProps) {
   const [points, setPoints] = useState<Point[]>([]);
   const [lines, setLines] = useState<ILine[]>([]);
@@ -155,7 +157,7 @@ export default function VisualizationEngine({
   return (
     <>
       <div className="canvas-wrapper">
-        <Canvas points={points} setPoints={setPoints} lines={lines} />
+        <Canvas points={points} setPoints={setPoints} lines={lines} setLines={setLines} polygonMode={polygonMode}/>
       </div>
       <div className="explanations-wrapper">
         <Explanations explanations={explanations} algorithm={explanationsTitle} />
