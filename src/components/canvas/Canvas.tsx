@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
 import { ILine, Point, pointsArray } from "../../shared/models/geometry";
-import { GREY_COLOR, distanceBetweenPoints, generateRandomNumber, getNextPointLetter } from "../../shared/util";
+import { GREY_COLOR, distanceBetweenPoints, generateRandomNumber, getLinesFromPoints, getNextPointLetter } from "../../shared/util";
 import "./Canvas.scss";
 import PointComponent from "./Point";
 import OverlayText from "./overlay-text/OverlayText";
@@ -56,7 +56,13 @@ export default function Canvas({ points, setPoints, lines, setLines, polygonMode
 
     setShowOverlayText(false);
     setPoints(points);
+    return points;
   };
+
+  const generateRandomPolygon = () => {
+    const points = generateRandomPoints();
+    setLines(getLinesFromPoints(points, GREY_COLOR, true));
+  }
 
   const addPolygonLine = (newPoint: Point) => {
     const lastPoint = points[points.length - 1];
@@ -123,7 +129,7 @@ export default function Canvas({ points, setPoints, lines, setLines, polygonMode
           ))}
         </Layer>
       </Stage>
-      {showOverlayText && <OverlayText polygonMode={polygonMode} generateRandomPoints={generateRandomPoints} />}
+      {showOverlayText && <OverlayText polygonMode={polygonMode} generate={polygonMode ? generateRandomPolygon : generateRandomPoints} />}
     </div>
   );
 }

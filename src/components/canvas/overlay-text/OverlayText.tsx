@@ -1,18 +1,18 @@
 import "./OverlayText.scss";
 
 interface OverlayTextProps {
-  generateRandomPoints: () => void;
+  generate: () => void;
   polygonMode?: boolean;
 }
 
 export default function OverlayText({
-  generateRandomPoints,
+  generate,
   polygonMode,
 }: OverlayTextProps) {
   return (
     <div className="overlay-text">
       <p className="text">
-        <span className="action" onClick={() => generateRandomPoints()}>
+        <span className="action" onClick={() => generate()}>
           Genereaza {polygonMode ? "poligon" : "puncte"} aleator
         </span>{" "}
         <span className="static">

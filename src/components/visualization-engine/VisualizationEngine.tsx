@@ -8,7 +8,7 @@ import {
   pointsArray,
 } from "../../shared/models/geometry";
 import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
-import { GREEN_COLOR, GREY_COLOR, ORANGE_COLOR, getPairsFromArray, timeout } from "../../shared/util";
+import { GREEN_COLOR, GREY_COLOR, ORANGE_COLOR, getLinesFromPoints, timeout } from "../../shared/util";
 import Canvas from "../canvas/Canvas";
 import Explanations from "../explanations/Explanations";
 import Button from "../button/Button";
@@ -69,7 +69,7 @@ export default function VisualizationEngine({
         }
         case "finalStep": {
           element.forEach((point: Point) => updatePointStyle(point, GREEN_COLOR));
-          setLines(getLinesFromPoints(element));
+          setLines(getLinesFromPoints(element, GREEN_COLOR));
         }
       }
     }
@@ -108,21 +108,7 @@ export default function VisualizationEngine({
       }
     }
 
-    setLines(getLinesFromPoints(canvasPoints));
-  };
-
-  const getLinesFromPoints = (points: Point[]) => {
-    const pointPairs = getPairsFromArray(points);
-
-    const lines = pointPairs.map(
-      (pointPair) =>
-        ({
-          points: pointsArray(pointPair[0], pointPair[1]),
-          color: GREEN_COLOR,
-        } as ILine)
-    );
-
-    return lines;
+    setLines(getLinesFromPoints(canvasPoints, GREEN_COLOR));
   };
 
   const cleanUpCanvas = () => {
