@@ -1,4 +1,4 @@
-import { ILine, Point, pointsArray } from "./models/geometry";
+import { ILine, Point } from "./models/geometry";
 
 export const POINT_RADIUS = 5;
 export const POINT_COORDINATE_MAX_VALUE = 50;
@@ -88,14 +88,16 @@ export const getLinesFromPoints = (points: Point[], color = GREY_COLOR, polygon 
   const lines = pointPairs.map(
     (pointPair) =>
       ({
-        points: pointsArray(pointPair[0], pointPair[1]),
+        startPoint: pointPair[0],
+        endPoint: pointPair[1],
         color,
       } as ILine)
   );
 
   if (polygon) {
     lines.push({
-      points: pointsArray(points[points.length - 1], points[0]),
+      startPoint: points[points.length - 1],
+      endPoint: points[0],
       color
     })
   }

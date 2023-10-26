@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
-import { ILine, Point, pointsArray } from "../../shared/models/geometry";
+import { ILine, Point } from "../../shared/models/geometry";
 import { GREY_COLOR, distanceBetweenPoints, generateRandomNumber, getLinesFromPoints, getNextPointLetter } from "../../shared/util";
 import "./Canvas.scss";
 import PointComponent from "./Point";
@@ -76,7 +76,8 @@ export default function Canvas({ points, setPoints, lines, setLines, polygonMode
     }
 
     const newLine: ILine = {
-      points: pointsArray(lastPoint, nextPoint),
+      startPoint: lastPoint,
+      endPoint: nextPoint,
       color: GREY_COLOR,
     };
     setLines((prevLines) => [...prevLines, newLine]);

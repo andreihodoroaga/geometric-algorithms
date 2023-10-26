@@ -6,7 +6,11 @@ interface Props {
 }
 
 export default function LineComponent({ line }: Props) {
+  const pointsArray = () => {
+    return [line.startPoint.x, line.startPoint.y, line.endPoint.x, line.endPoint.y];
+  };
+  
   return (
-    <Line points={line.points} stroke={line.color} dash={line.dash ?? []} />
+    <Line points={pointsArray()} stroke={line.color} dash={line.dash ?? []} />
   );
 }

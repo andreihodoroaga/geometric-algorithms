@@ -5,7 +5,6 @@ import {
   Point,
   convertPointBetweenAlgorithmAndCanvas,
   defaultDash,
-  pointsArray,
 } from "../../shared/models/geometry";
 import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
 import { GREEN_COLOR, GREY_COLOR, ORANGE_COLOR, getLinesFromPoints, timeout } from "../../shared/util";
@@ -55,7 +54,8 @@ export default function VisualizationEngine({
           startPoint = convertPointBetweenAlgorithmAndCanvas(startPoint);
           endPoint = convertPointBetweenAlgorithmAndCanvas(endPoint);
           const newLine: ILine = {
-            points: pointsArray(startPoint, endPoint),
+            startPoint,
+            endPoint,
             color: color!,
             ...(style === "dash" && { dash: defaultDash }),
           };
