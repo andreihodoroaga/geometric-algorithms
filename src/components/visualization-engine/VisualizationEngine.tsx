@@ -70,7 +70,10 @@ export default function VisualizationEngine({
         case "finalStep": {
           element.forEach((point: Point) => updatePointStyle(point, GREEN_COLOR));
           setLines(getLinesFromPoints(element, GREEN_COLOR));
+          break;
         }
+        default:
+          break;
       }
     }
   };
@@ -135,7 +138,9 @@ export default function VisualizationEngine({
       // at every new step we should keep on the canvas only some points / lines
       // for now, keeping only the green points and lines + orange points (jarvis march) should do
       cleanUpCanvas();
-      addStepDrawings(step.graphicDrawingsStepList);
+      if (step.graphicDrawingsStepList) {
+        addStepDrawings(step.graphicDrawingsStepList);
+      }
       await timeout(1000);
     }
   };
@@ -143,7 +148,7 @@ export default function VisualizationEngine({
   return (
     <>
       <div className="canvas-wrapper">
-        <Canvas points={points} setPoints={setPoints} lines={lines} setLines={setLines} polygonMode={polygonMode}/>
+        <Canvas points={points} setPoints={setPoints} lines={lines} setLines={setLines} polygonMode={polygonMode} />
       </div>
       <div className="explanations-wrapper">
         <Explanations explanations={explanations} algorithm={explanationsTitle} />

@@ -1,4 +1,4 @@
-import { ILine, Point } from "./models/geometry";
+import { ILine, Point, convertPointBetweenAlgorithmAndCanvas } from "./models/geometry";
 
 export const POINT_RADIUS = 5;
 export const POINT_COORDINATE_MAX_VALUE = 50;
@@ -98,8 +98,8 @@ export const getLinesFromPoints = (points: Point[], color = GREY_COLOR, polygon 
     lines.push({
       startPoint: points[points.length - 1],
       endPoint: points[0],
-      color
-    })
+      color,
+    });
   }
 
   return lines;
@@ -107,4 +107,19 @@ export const getLinesFromPoints = (points: Point[], color = GREY_COLOR, polygon 
 
 export const timeout = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+export const isPointInList = (point: Point, points: Point[]) => {
+  for (let i = 0; i < points.length; i++) {
+    if (points[i].x == point.x && points[i].y == point.y) {
+      return true;
+    }
+  }
+  return false;
+};
+
+// points for canvas: origin in top left (and y increasing as you go down)
+// points for algorithm: origin in bottom left (so the alg. gets the points as we see them)
+export const determinePointsForAlgorithm = (points: Point[]) => {
+  return points.map((point) => convertPointBetweenAlgorithmAndCanvas(point));
 };

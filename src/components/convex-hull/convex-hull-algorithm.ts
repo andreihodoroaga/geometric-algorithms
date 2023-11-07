@@ -1,5 +1,5 @@
 import { VisualizationStep } from "../../shared/models/algorithm";
-import { Point, convertPointBetweenAlgorithmAndCanvas } from "../../shared/models/geometry";
+import { Point, calculateOrientationForNormalPoints, convertPointBetweenAlgorithmAndCanvas } from "../../shared/models/geometry";
 import { GREEN_COLOR, ORANGE_COLOR, RED_COLOR } from "../../shared/util";
 
 type ConvexHullPart = "lower" | "upper";
@@ -9,15 +9,6 @@ const getFinalConvexHullPart = (partVisualizationSteps: VisualizationStep[]) => 
   return lastLowerConvexHullStep.graphicDrawingsStepList[0].element.map((point: Point) =>
     convertPointBetweenAlgorithmAndCanvas(point)
   );
-};
-
-const calculateOrientationForNormalPoints = (firstPoint: Point, middlePoint: Point, endPoint: Point) => {
-  // 2 = left,  1 = right, 0 = collinear
-  const val =
-    (middlePoint.x - firstPoint.x) * (endPoint.y - firstPoint.y) -
-    (endPoint.x - firstPoint.x) * (middlePoint.y - firstPoint.y);
-  if (val == 0) return 0;
-  return val > 0 ? 2 : 1;
 };
 
 export const computeGrahamScanSteps = (sortedPoints: Point[]) => {

@@ -5,7 +5,7 @@ import { Menu, MenuItem } from "@szhsin/react-menu";
 import "@szhsin/react-menu/dist/index.css";
 import "@szhsin/react-menu/dist/transitions/slide.css";
 import { Point } from "../../shared/models/geometry";
-import { comparatorPointsByXAscending, sortList } from "../../shared/util";
+import { comparatorPointsByXAscending, determinePointsForAlgorithm, sortList } from "../../shared/util";
 import { computeGrahamScanSteps, computeJarvisMarchExecutionSteps } from "./convex-hull-algorithm";
 import VisualizationEngine from "../visualization-engine/VisualizationEngine";
 
@@ -25,22 +25,6 @@ export default function ConvexHull() {
       return computeGrahamScanSteps(sortedPointsForAlgorithm);
     }
     return computeJarvisMarchExecutionSteps(pointsForAlgorithm);
-  };
-
-  // points for canvas: origin in top left (and y increasing as you go down)
-  // points for algorithm: origin in bottom left (so the alg. gets the points as we see them)
-  const determinePointsForAlgorithm = (points: Point[]) => {
-    const newPoints: Point[] = [];
-
-    points.forEach((point) => {
-      const newPoint = {
-        ...point,
-        y: -point.y,
-      };
-      newPoints.push(newPoint);
-    });
-
-    return newPoints;
   };
 
   return (
