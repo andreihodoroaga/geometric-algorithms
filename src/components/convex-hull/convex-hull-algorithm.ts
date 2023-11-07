@@ -36,9 +36,7 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
   }
 
   const algorithmGraphicIndications: VisualizationStep[] = [];
-  let algorithmNumberOfPointsInConvexHull = 0;
   const convexHullPart = [points[0], points[1]];
-  algorithmNumberOfPointsInConvexHull += 2;
 
   let stepExplanation =
     "Punctele au fost sortate lexicografic. Frontiera inferioara este initializata cu punctele " +
@@ -62,16 +60,11 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
         type: "updateConvexHullList",
         element: convexHullPart.slice(),
       },
-      {
-        type: "updateNumber",
-        element: algorithmNumberOfPointsInConvexHull,
-      },
     ],
   } as VisualizationStep;
   algorithmGraphicIndications.push(visualizationStep);
 
   for (let i = 2; i < points.length; i++) {
-    algorithmNumberOfPointsInConvexHull++;
     let visualizationStep = {
       explanation: "Punctul " + points[i].label + " este adaugat in lista.",
       graphicDrawingsStepList: [
@@ -79,10 +72,6 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
           type: "point",
           element: points[i],
           color: ORANGE_COLOR,
-        },
-        {
-          type: "updateNumber",
-          element: algorithmNumberOfPointsInConvexHull,
         },
       ],
     } as VisualizationStep;
@@ -123,7 +112,6 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
         stepExplanation += ", deci punctul " + lastPoint.label + " este sters din lista.";
 
         convexHullPart.pop();
-        algorithmNumberOfPointsInConvexHull--;
         const temporaryConvexHullPart = convexHullPart.slice();
         temporaryConvexHullPart.push(points[i]);
         const visualizationStep = {
@@ -149,10 +137,6 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
               type: "point",
               element: lastPoint,
               color: RED_COLOR,
-            },
-            {
-              type: "updateNumber",
-              element: algorithmNumberOfPointsInConvexHull,
             },
           ],
         };
@@ -198,14 +182,12 @@ const getIndexOfFarLeftPoint = (pointsOnCanvas: Point[]) => {
 };
 
 export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
-  let algorithmNumberOfPointsInConvexHull = 0;
   const convexHullPoints = [];
   const algorithmGraphicIndications: VisualizationStep[] = [];
 
   const leftMostPointIndex = getIndexOfFarLeftPoint(pointsOnCanvas);
   let currentPointIndex = leftMostPointIndex;
   let currentPoint = pointsOnCanvas[currentPointIndex];
-  algorithmNumberOfPointsInConvexHull++;
   convexHullPoints.push(currentPoint);
   let visualizationStep: VisualizationStep = {
     explanation:
@@ -218,10 +200,6 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
         element: currentPoint,
         color: GREEN_COLOR,
         size: 6,
-      },
-      {
-        type: "updateNumber",
-        element: algorithmNumberOfPointsInConvexHull,
       },
     ],
   };
@@ -351,7 +329,6 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
       valid = false;
     } else {
       convexHullPoints.push(pivotPoint);
-      algorithmNumberOfPointsInConvexHull++;
       currentPoint = pivotPoint;
       currentPointIndex = pivotIndex;
       visualizationStep = {
@@ -360,10 +337,6 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
           {
             type: "updateConvexHullList",
             element: convexHullPoints.slice(),
-          },
-          {
-            type: "updateNumber",
-            element: algorithmNumberOfPointsInConvexHull,
           },
         ],
       };

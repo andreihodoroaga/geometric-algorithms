@@ -42,9 +42,6 @@ export default function VisualizationEngine({
       const { type, element, style, color, size } = drawing;
 
       switch (type) {
-        case "updateNumber":
-          // element = the number of points in the convex hull
-          break;
         case "updateConvexHullList": {
           convexHullUpdatedHandler(element as Point[]);
           break;
