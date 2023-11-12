@@ -8,6 +8,6 @@ export interface Drawing {
 }
 
 export interface VisualizationStep {
-  explanation: string;
-  graphicDrawingsStepList: Drawing[];
+  explanation?: string;
+  graphicDrawingsStepList?: Drawing[];
 }

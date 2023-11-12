@@ -7,10 +7,34 @@ import {
   defaultDash,
 } from "../../shared/models/geometry";
 import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
-import { GREEN_COLOR, GREY_COLOR, ORANGE_COLOR, getLinesFromPoints, timeout } from "../../shared/util";
+import { GREEN_COLOR, GREY_COLOR, ORANGE_COLOR, getLinesFromPoints } from "../../shared/util";
 import Canvas from "../canvas/Canvas";
 import Explanations from "../explanations/Explanations";
 import Button from "../button/Button";
+
+// at each step only the green points and lines should remain
+const clearPointsFromCanvas = (points: Point[]) => {
+  return points.map((point) =>
+    point.color === GREEN_COLOR
+      ? point
+      : {
+          ...point,
+          color: GREY_COLOR,
+          size: DEFAULT_POINT_SIZE,
+        }
+  );
+};
+
+const clearLinesFromCanvas = (lines: ILine[]) => {
+  return lines.map((line) =>
+    [GREEN_COLOR, ORANGE_COLOR].includes(line.color)
+      ? line
+      : {
+          ...line,
+          color: GREY_COLOR,
+        }
+  );
+};
 
 interface VisualizationEngineProps {
   computeVisualizationSteps: (points: Point[]) => VisualizationStep[];
@@ -19,7 +43,7 @@ interface VisualizationEngineProps {
   polygonMode?: boolean;
 }
 
-// A reusable component to be used in every algorithm
+// A component to be used in every algorithm
 export default function VisualizationEngine({
   computeVisualizationSteps,
   explanationsTitle,
@@ -30,14 +54,45 @@ export default function VisualizationEngine({
   const [lines, setLines] = useState<ILine[]>([]);
   const [explanations, setExplanations] = useState<string[]>([]);
   const [algorithmStarted, setAlgorithmStarted] = useState(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [steps, setSteps] = useState<VisualizationStep[]>([]);
 
   useEffect(() => {
     if (algorithmStarted) {
-      startAlgorithm();
+      setAlgorithmStarted(false);
+      setCurrentStepIndex(0);
+      setSteps(computeVisualizationSteps(points));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [algorithmStarted]);
 
+  useEffect(() => {
+    if (currentStepIndex === null) {
+      return;
+    }
+
+    if (currentStepIndex >= steps.length) {
+      return;
+    }
+    const currentStep = steps[currentStepIndex!];
+
+    async function drawCurrentStep() {
+      if (currentStep.explanation) {
+        setExplanations((explanations) => [...explanations, currentStep.explanation!]);
+      }
+      if (currentStep.graphicDrawingsStepList) {
+        addStepDrawings(currentStep.graphicDrawingsStepList);
+      }
+    }
+    drawCurrentStep();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStepIndex]);
+
   const addStepDrawings = (drawings: Drawing[]) => {
+    setPoints(clearPointsFromCanvas(points));
+    setLines(clearLinesFromCanvas(lines));
+
     for (const drawing of drawings) {
       const { type, element, style, color, size } = drawing;
 
@@ -50,13 +105,7 @@ export default function VisualizationEngine({
           let [startPoint, endPoint] = element as Point[];
           startPoint = convertPointBetweenAlgorithmAndCanvas(startPoint);
           endPoint = convertPointBetweenAlgorithmAndCanvas(endPoint);
-          const newLine: ILine = {
-            startPoint,
-            endPoint,
-            color: color!,
-            ...(style === "dash" && { dash: defaultDash }),
-          };
-          setLines((prevLines) => [...prevLines, newLine]);
+          addLine(startPoint, endPoint, color!, style === "dash");
           break;
         }
         case "point": {
@@ -75,8 +124,18 @@ export default function VisualizationEngine({
     }
   };
 
+  const addLine = (startPoint: Point, endPoint: Point, color: string, dash?: boolean) => {
+    const newLine: ILine = {
+      startPoint,
+      endPoint,
+      color: color!,
+      ...(dash && { dash: defaultDash }),
+    };
+    setLines((prevLines) => [...prevLines, newLine]);
+  };
+
   const updatePointStyle = (point: Point, color: string, size?: number) => {
-    const newPoint = { ...point, color, size: size ? size : point.size };
+    const newPoint = { ...point, color, size: size ?? DEFAULT_POINT_SIZE };
     setPoints((points) => {
       const pointIndex = points.findIndex((p) => p.label === point.label);
       const updatedPoints = [...points];
@@ -86,60 +145,15 @@ export default function VisualizationEngine({
     });
   };
 
-  const resetAllPointsColor = () => {
-    setPoints((points) =>
-      points.map((point) => ({
-        ...point,
-        color: GREY_COLOR,
-      }))
-    );
-  };
-
   const convexHullUpdatedHandler = (newConvexHullPoints: Point[]) => {
-    resetAllPointsColor();
-
     const canvasPoints = [];
     for (const point of newConvexHullPoints) {
       const canvasPoint = convertPointBetweenAlgorithmAndCanvas(point);
       canvasPoints.push(canvasPoint);
-      const currentPoint = points.find((p) => p.label === canvasPoint.label);
-      if (currentPoint?.color !== GREEN_COLOR) {
-        updatePointStyle(canvasPoint, GREEN_COLOR);
-      }
+      updatePointStyle(canvasPoint, GREEN_COLOR);
     }
 
     setLines(getLinesFromPoints(canvasPoints, GREEN_COLOR));
-  };
-
-  const cleanUpCanvas = () => {
-    setPoints((points) =>
-      points.map((p) => ({
-        ...p,
-        color: p.color === GREEN_COLOR || p.color === ORANGE_COLOR ? p.color : GREY_COLOR,
-        size: DEFAULT_POINT_SIZE,
-      }))
-    );
-
-    setLines((prevLines) =>
-      prevLines
-        .filter((l) => l.color === GREEN_COLOR || l.color === ORANGE_COLOR)
-        .map((l) => (l.dash ? l : { ...l, dash: [] }))
-    );
-  };
-
-  const startAlgorithm = async () => {
-    const steps = computeVisualizationSteps(points);
-
-    for (const step of steps) {
-      setExplanations((explanations) => [...explanations, step.explanation]);
-      // at every new step we should keep on the canvas only some points / lines
-      // for now, keeping only the green points and lines + orange points (jarvis march) should do
-      cleanUpCanvas();
-      if (step.graphicDrawingsStepList) {
-        addStepDrawings(step.graphicDrawingsStepList);
-      }
-      await timeout(1000);
-    }
   };
 
   return (
@@ -153,6 +167,7 @@ export default function VisualizationEngine({
       <div className="panel-wrapper">
         {children}
         <Button onClick={() => setAlgorithmStarted(true)} content={"Start"} extraClass="primary" />
+        <Button onClick={() => setCurrentStepIndex((currIdx) => currIdx! + 1)} content={"Next"} extraClass="primary" />
       </div>
     </>
   );

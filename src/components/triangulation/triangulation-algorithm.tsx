@@ -96,8 +96,8 @@ const comparePointsWithRespectToAxis = (currPoint: Point, nextPoint: Point, prev
 // a polygon is monotone with respect to an axis (say the x-axis)
 // if it has only one vertex whose x-coordinate than both of its neighbours
 // https://cs.stackexchange.com/questions/1577/how-do-i-test-if-a-polygon-is-monotone-with-respect-to-a-line
+// the points are assumed to be in trigonometric order
 export const isPolygonMonotone = (points: Point[], axis: Axis) => {
-  // the points in trigonometric order
   const numberOfPoints = points.length;
   let localMins = 0;
 
@@ -151,6 +151,7 @@ const triangulateYMonotonePolygon = (points: Point[]) => {
 
   const leftChain: Point[] = [];
   const rightChain: Point[] = [];
+  // determine the left and right chains
   checkYMonotone(points, leftChain, rightChain);
 
   if (numberOfPoints == 3) {

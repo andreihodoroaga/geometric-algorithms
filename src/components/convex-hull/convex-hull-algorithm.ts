@@ -1,12 +1,16 @@
 import { VisualizationStep } from "../../shared/models/algorithm";
-import { Point, calculateOrientationForNormalPoints, convertPointBetweenAlgorithmAndCanvas } from "../../shared/models/geometry";
+import {
+  Point,
+  calculateOrientationForNormalPoints,
+  convertPointBetweenAlgorithmAndCanvas,
+} from "../../shared/models/geometry";
 import { GREEN_COLOR, ORANGE_COLOR, RED_COLOR } from "../../shared/util";
 
 type ConvexHullPart = "lower" | "upper";
 
 const getFinalConvexHullPart = (partVisualizationSteps: VisualizationStep[]) => {
   const lastLowerConvexHullStep = partVisualizationSteps[partVisualizationSteps.length - 1];
-  return lastLowerConvexHullStep.graphicDrawingsStepList[0].element.map((point: Point) =>
+  return lastLowerConvexHullStep.graphicDrawingsStepList![0].element.map((point: Point) =>
     convertPointBetweenAlgorithmAndCanvas(point)
   );
 };
