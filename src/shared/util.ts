@@ -9,7 +9,9 @@ export const ORANGE_COLOR = "#FF4500";
 export const GREEN_COLOR = "green";
 export const LIGHT_GREEN_COLOR = "#52ab98";
 export const BLUE_COLOR = "#2b6777";
+export const LIGHT_GREY_COLOR = "#ccc";
 export const GREY_COLOR = "#666";
+export const BLACK_COLOR = "#444";
 
 export const generateRandomNumber = (start: number, end: number) => {
   if (start > end) {

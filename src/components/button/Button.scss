@@ -12,23 +12,8 @@
   outline: none;
   cursor: pointer;
 
-  &.primary {
-    border-color: #07a17b;
-    color: #07a17b;
-
-    &:hover {
-      filter: drop-shadow(0px 0px 9px rgba(7, 161, 123, 0.25));
-    }
-  }
-
-  &.dropdown {
-    svg {
-      margin-top: 0.125rem;
-      margin-left: 0.25rem;
-    }
-  }
-
-  &:hover {
+  &:hover,
+  &:focus {
     background-color: rgb(247, 248, 249);
     filter: drop-shadow(0px 0px 4px rgba(0, 0, 0, 0.25));
   }
@@ -40,5 +25,34 @@
 
   &:focus-visible {
     box-shadow: none;
+  }
+
+  &.primary {
+    border-color: #07a17b;
+    color: #07a17b;
+
+    &:hover,
+    &:focus {
+      filter: drop-shadow(0px 0px 9px rgba(7, 161, 123, 0.25));
+    }
+  }
+
+  &.dropdown {
+    svg {
+      margin-top: 0.125rem;
+      margin-left: 0.25rem;
+    }
+  }
+
+  &.mini {
+    padding: 8px 4px;
+
+    &:not(.primary) {
+      &:hover,
+      &:focus {
+        background: none;
+        filter: none;
+      }
+    }
   }
 }

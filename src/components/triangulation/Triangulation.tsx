@@ -26,7 +26,6 @@ export default function Triangulation() {
       explanationsTitle="Triangulare"
       polygonMode={true}
     >
-      {/* TODO: If i remove this formatter will f this up*/}
     </VisualizationEngine>
   );
 }

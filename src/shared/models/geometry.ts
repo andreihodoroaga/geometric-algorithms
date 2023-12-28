@@ -7,6 +7,10 @@ export interface Point extends SimplePoint {
   label: string;
   color: string;
   size?: number;
+  labelPosition?: {
+    x: number;
+    y: number;
+  };
 }
 
 export interface ILine {
@@ -30,7 +34,7 @@ export const convertPointBetweenAlgorithmAndCanvas = (point: Point) => {
 
 export const arePointsEqual = (p1: Point, p2: Point) => {
   return p1.x === p2.x && p1.y === p2.y;
-}
+};
 
 // determine the position of targetPoint with respect to the oriented segment [firstPoint, endPoint]
 export const calculateOrientationForNormalPoints = (firstPoint: Point, targetPoint: Point, endPoint: Point) => {
