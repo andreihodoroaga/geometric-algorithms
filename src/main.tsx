@@ -11,27 +11,27 @@ import "./index.scss";
 
 const router = createBrowserRouter([
   {
-    path: "/",
+    path: "/geometric-algorithms",
     element: <App />,
     children: [
       {
-        path: "convex-hull",
+        path: "/geometric-algorithms/convex-hull",
         element: <ConvexHull />,
       },
       {
-        path: "triangulation",
+        path: "/geometric-algorithms/triangulation",
         element: <Triangulation />,
       },
       {
-        path: "duality",
+        path: "/geometric-algorithms/duality",
         element: <Duality />,
       },
       {
-        path: "trapezoidal-map",
+        path: "/geometric-algorithms/trapezoidal-map",
         element: <TrapezoidalMap />,
       },
       {
-        path: "voronoi-diagram",
+        path: "/geometric-algorithms/voronoi-diagram",
         element: <VoronoiDiagram />,
       },
     ],

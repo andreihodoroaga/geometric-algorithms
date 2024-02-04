@@ -9,26 +9,26 @@ export default function Navbar() {
   return (
     <nav>
       <div className="logo">
-        <NavLink to={`/`} className={({ isActive, isPending }) => (isPending ? "pending" : isActive ? "active" : "")}>
+        <NavLink to={`/geometric-algorithms`} className={({ isActive, isPending }) => (isPending ? "pending" : isActive ? "active" : "")}>
           Logo
           <span>Home</span>
         </NavLink>
       </div>
       <ul className={showAlgorithms ? "flex" : "hidden"}>
         <li>
-          <NavLink to={`/convex-hull`}>Acoperire convexa</NavLink>
+          <NavLink to={`/geometric-algorithms/convex-hull`}>Acoperire convexa</NavLink>
         </li>
         <li>
-          <NavLink to={`/triangulation`}>Triangularea poligoanelor</NavLink>
+          <NavLink to={`/geometric-algorithms/triangulation`}>Triangularea poligoanelor</NavLink>
         </li>
         <li>
-          <NavLink to={`/duality`}>Dualitate</NavLink>
+          <NavLink to={`/geometric-algorithms/duality`}>Dualitate</NavLink>
         </li>
         <li>
-          <NavLink to={`/trapezoidal-map`}>Harta trapezoidala</NavLink>
+          <NavLink to={`/geometric-algorithms/trapezoidal-map`}>Harta trapezoidala</NavLink>
         </li>
         <li>
-          <NavLink to={`/voronoi-diagram`}>Diagrama Voronoi</NavLink>
+          <NavLink to={`/geometric-algorithms/voronoi-diagram`}>Diagrama Voronoi</NavLink>
         </li>
       </ul>
       <div className="hamburger" onClick={() => setShowAlgorithms(!showAlgorithms)}>
