@@ -28,6 +28,8 @@ interface CanvasProps {
   originInCenter?: boolean;
   disabled?: boolean;
   axisMultiplier?: number;
+  shouldReset?: boolean;
+  onReset?: () => void;
 }
 
 export default function Canvas({
@@ -41,6 +43,8 @@ export default function Canvas({
   originInCenter = false,
   disabled = false,
   axisMultiplier,
+  shouldReset,
+  onReset,
 }: CanvasProps) {
   const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({
     width: 0,
@@ -50,6 +54,16 @@ export default function Canvas({
   const [closedPolygon, setClosedPolygon] = useState(false);
   const [axesLines, setAxesLines] = useState<ILine[]>([]);
   const [axesPoints, setAxesPoints] = useState<Point[]>([]);
+
+  useEffect(() => {
+    if (shouldReset && onReset) {
+      setShowOverlayText(true);
+      setPoints([]);
+      setLines([]);
+      onReset();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldReset])
 
   // Set the canvas width and height
   useEffect(() => {

@@ -11,6 +11,12 @@ import { GREEN_COLOR, GREY_COLOR, ORANGE_COLOR, getLinesFromPoints } from "../..
 import Canvas from "../canvas/Canvas";
 import Explanations from "../explanations/Explanations";
 import Button from "../button/Button";
+import { Menu, MenuItem } from "@szhsin/react-menu";
+
+enum RunMode {
+  Automatic = "Automat",
+  Manual = "Manual",
+}
 
 // at each step only the green points and lines should remain
 const clearPointsFromCanvas = (points: Point[]) => {
@@ -57,10 +63,14 @@ export default function VisualizationEngine({
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [steps, setSteps] = useState<VisualizationStep[]>([]);
+  const [selectedRunMode, setSelectedRunMode] = useState<RunMode>(RunMode.Automatic);
+  const [automaticRunInterval, setAutomaticRunInterval] = useState<number>();
+  const [isPaused, setIsPaused] = useState(false);
+  const [visualizationEnded, setVisualizationEnded] = useState(false);
+  const [shouldResetCanvas, setShouldResetCanvas] = useState(false);
 
   useEffect(() => {
     if (algorithmStarted) {
-      setAlgorithmStarted(false);
       setCurrentStepIndex(0);
       setSteps(computeVisualizationSteps(points));
     }
@@ -73,19 +83,17 @@ export default function VisualizationEngine({
     }
 
     if (currentStepIndex >= steps.length) {
+      setVisualizationEnded(true);
       return;
     }
-    const currentStep = steps[currentStepIndex!];
 
-    async function drawCurrentStep() {
-      if (currentStep.explanation) {
-        setExplanations((explanations) => [...explanations, currentStep.explanation!]);
-      }
-      if (currentStep.graphicDrawingsStepList) {
-        addStepDrawings(currentStep.graphicDrawingsStepList);
-      }
+    const currentStep = steps[currentStepIndex!];
+    if (currentStep.explanation) {
+      setExplanations((explanations) => [...explanations, currentStep.explanation!]);
     }
-    drawCurrentStep();
+    if (currentStep.graphicDrawingsStepList) {
+      addStepDrawings(currentStep.graphicDrawingsStepList);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStepIndex]);
 
@@ -156,18 +164,101 @@ export default function VisualizationEngine({
     setLines(getLinesFromPoints(canvasPoints, GREEN_COLOR));
   };
 
+  const resetEverything = () => {
+    setPoints([]);
+    setLines([]);
+    setCurrentStepIndex(null);
+    setExplanations([]);
+    setShouldResetCanvas(true);
+    setVisualizationEnded(false);
+    setAlgorithmStarted(false);
+  };
+
+  const startOrPauseAutomaticRun = () => {
+    if (visualizationEnded) {
+      resetEverything();
+      return;
+    }
+
+    if (!algorithmStarted || isPaused) {
+      setAlgorithmStarted(true);
+      setIsPaused(false);
+      setAutomaticRunInterval(
+        setInterval(() => {
+          setCurrentStepIndex((currIdx) => currIdx! + 1);
+        }, 1000)
+      );
+      return;
+    }
+
+    setIsPaused(true);
+    clearInterval(automaticRunInterval);
+  };
+
+  const startOrNextManualRun = () => {
+    if (visualizationEnded) {
+      resetEverything();
+      return;
+    }
+
+    if (!algorithmStarted) {
+      setAlgorithmStarted(true);
+      return;
+    }
+
+    setCurrentStepIndex((currIdx) => currIdx! + 1);
+  };
+
+  const emptyCanvas = !points.length && !lines.length;
+
   return (
     <>
       <div className="canvas-wrapper">
-        <Canvas points={points} setPoints={setPoints} lines={lines} setLines={setLines} polygonMode={polygonMode} />
+        <Canvas
+          points={points}
+          setPoints={setPoints}
+          lines={lines}
+          setLines={setLines}
+          polygonMode={polygonMode}
+          shouldReset={shouldResetCanvas}
+          onReset={() => setShouldResetCanvas(false)}
+        />
       </div>
       <div className="explanations-wrapper">
         <Explanations explanations={explanations} algorithm={explanationsTitle} />
       </div>
       <div className="panel-wrapper">
         {children}
-        <Button onClick={() => setAlgorithmStarted(true)} content={"Start"} extraClass="primary" />
-        <Button onClick={() => setCurrentStepIndex((currIdx) => currIdx! + 1)} content={"Next"} extraClass="primary" />
+        <Menu menuButton={<Button content={selectedRunMode} dropdownBtn={true} />} transition>
+          {Object.values(RunMode).map((runMode) => (
+            <MenuItem
+              key={runMode}
+              className={runMode === selectedRunMode ? "active" : ""}
+              onClick={() => setSelectedRunMode(runMode)}
+            >
+              {runMode}
+            </MenuItem>
+          ))}
+        </Menu>
+        {selectedRunMode === RunMode.Automatic ? (
+          <Button
+            onClick={() => startOrPauseAutomaticRun()}
+            disabled={emptyCanvas}
+            content={visualizationEnded ? "Reset" : !algorithmStarted || isPaused ? "Start" : "Pause"}
+            extraClass="primary"
+            tooltip="Mai intai adauga puncte"
+            showTooltip={emptyCanvas}
+          />
+        ) : (
+          <Button
+            onClick={() => startOrNextManualRun()}
+            disabled={emptyCanvas}
+            content={visualizationEnded ? "Reset" : !algorithmStarted ? "Start" : "Next"}
+            extraClass="primary"
+            tooltip="Mai intai adauga puncte"
+            showTooltip={emptyCanvas}
+          />
+        )}
       </div>
     </>
   );

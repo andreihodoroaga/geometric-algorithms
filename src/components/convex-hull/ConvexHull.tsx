@@ -29,7 +29,7 @@ export default function ConvexHull() {
 
   return (
     <VisualizationEngine computeVisualizationSteps={computeVisualizationSteps} explanationsTitle={selectedAlgorithm}>
-      <Menu menuButton={<Button content="Algoritm" dropdownBtn={true} />} transition>
+      <Menu menuButton={<Button content={selectedAlgorithm} dropdownBtn={true} />} transition>
         {Object.values(ConvexHullAlgorithms).map((algorithm) => (
           <MenuItem
             key={algorithm}

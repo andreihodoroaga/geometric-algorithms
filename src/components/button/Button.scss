@@ -27,7 +27,7 @@
     box-shadow: none;
   }
 
-  &.primary {
+  &.primary:not(:disabled) {
     border-color: #07a17b;
     color: #07a17b;
 
@@ -35,6 +35,13 @@
     &:focus {
       filter: drop-shadow(0px 0px 9px rgba(7, 161, 123, 0.25));
     }
+  }
+
+  &.disabled {
+    background-color: initial;
+    filter: none;
+    box-shadow: none;
+    cursor: default;
   }
 
   &.dropdown {
