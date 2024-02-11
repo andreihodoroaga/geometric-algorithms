@@ -60,6 +60,7 @@ export default function Canvas({
       setShowOverlayText(true);
       setPoints([]);
       setLines([]);
+      setClosedPolygon(false);
       onReset();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

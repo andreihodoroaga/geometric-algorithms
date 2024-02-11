@@ -36,3 +36,9 @@
   align-items: center;
   gap: 36px;
 }
+
+.error-snackbar {
+  .MuiSnackbarContent-root {
+    background-color: #FF5252;
+  }
+}

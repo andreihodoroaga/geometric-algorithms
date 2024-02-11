@@ -12,6 +12,10 @@ import Canvas from "../canvas/Canvas";
 import Explanations from "../explanations/Explanations";
 import Button from "../button/Button";
 import { Menu, MenuItem } from "@szhsin/react-menu";
+import Snackbar from "@mui/material/Snackbar";
+import React from "react";
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 
 enum RunMode {
   Automatic = "Automat",
@@ -43,7 +47,7 @@ const clearLinesFromCanvas = (lines: ILine[]) => {
 };
 
 interface VisualizationEngineProps {
-  computeVisualizationSteps: (points: Point[]) => VisualizationStep[];
+  computeVisualizationSteps: (points: Point[]) => VisualizationStep[] | string;
   explanationsTitle: string;
   children: React.ReactNode;
   polygonMode?: boolean;
@@ -61,18 +65,24 @@ export default function VisualizationEngine({
   const [explanations, setExplanations] = useState<string[]>([]);
   const [algorithmStarted, setAlgorithmStarted] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [steps, setSteps] = useState<VisualizationStep[]>([]);
   const [selectedRunMode, setSelectedRunMode] = useState<RunMode>(RunMode.Automatic);
   const [automaticRunInterval, setAutomaticRunInterval] = useState<number>();
   const [isPaused, setIsPaused] = useState(false);
   const [visualizationEnded, setVisualizationEnded] = useState(false);
   const [shouldResetCanvas, setShouldResetCanvas] = useState(false);
+  const [snackbarErrorMessage, setSnackBarErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (algorithmStarted) {
-      setCurrentStepIndex(0);
-      setSteps(computeVisualizationSteps(points));
+      const visualizationPointsOrError = computeVisualizationSteps(points);
+      if (typeof visualizationPointsOrError === 'string') {
+        setSnackBarErrorMessage(visualizationPointsOrError);
+        setVisualizationEnded(true);
+      } else {
+        setCurrentStepIndex(0);
+        setSteps(computeVisualizationSteps(points) as VisualizationStep[]);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [algorithmStarted]);
@@ -96,6 +106,12 @@ export default function VisualizationEngine({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStepIndex]);
+
+  useEffect(() => {
+    if (visualizationEnded) {
+      clearInterval(automaticRunInterval);
+    }
+  }, [automaticRunInterval, visualizationEnded])
 
   const addStepDrawings = (drawings: Drawing[]) => {
     setPoints(clearPointsFromCanvas(points));
@@ -172,6 +188,8 @@ export default function VisualizationEngine({
     setShouldResetCanvas(true);
     setVisualizationEnded(false);
     setAlgorithmStarted(false);
+    setSnackBarErrorMessage(null);
+    clearInterval(automaticRunInterval);
   };
 
   const startOrPauseAutomaticRun = () => {
@@ -208,6 +226,23 @@ export default function VisualizationEngine({
 
     setCurrentStepIndex((currIdx) => currIdx! + 1);
   };
+
+  const handleCloseErrorSnackbar = () => {
+    setSnackBarErrorMessage('');
+  }
+
+  const snackBarAction = (
+    <React.Fragment>
+      <IconButton
+        size="small"
+        aria-label="close"
+        color="inherit"
+        onClick={handleCloseErrorSnackbar}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </React.Fragment>
+  );
 
   const emptyCanvas = !points.length && !lines.length;
 
@@ -260,6 +295,16 @@ export default function VisualizationEngine({
           />
         )}
       </div>
+      <Snackbar
+        className="error-snackbar"
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        open={!!snackbarErrorMessage}
+        onClose={handleCloseErrorSnackbar}
+        message={snackbarErrorMessage}  
+        action={snackBarAction}
+        ClickAwayListenerProps={{ onClickAway: () => null }}
+        transitionDuration={200}
+      />
     </>
   );
 }

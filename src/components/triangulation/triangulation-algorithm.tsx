@@ -113,6 +113,7 @@ export const isPolygonMonotone = (points: Point[], axis: Axis) => {
   return localMins == 1;
 };
 
+// the legacy method for checking if a polygon is y-monotone
 export const checkYMonotone = (points: Point[], leftChain: Point[], rightChain: Point[]) => {
   let indexMinPoint = 0;
   for (let i = 1; i < points.length; i++) {

@@ -3,20 +3,21 @@ import { determinePointsForAlgorithm } from "../../shared/util";
 import VisualizationEngine from "../visualization-engine/VisualizationEngine";
 import {
   checkValidPolygon,
-  checkYMonotone,
   computeTriangulationSteps,
-  isPolygonMonotone,
+  isPolygonMonotone
 } from "./triangulation-algorithm";
 
 export default function Triangulation() {
+  // Returns the visualization steps or an error
   const computeVisualizationSteps = (points: Point[]) => {
     const pointsForAlgorithm = determinePointsForAlgorithm(points);
     const visualizationSteps = computeTriangulationSteps(pointsForAlgorithm);
-    console.log("Is polygon valid: ", checkValidPolygon(points));
-    console.log("Is polygon x-monotone: ", isPolygonMonotone(pointsForAlgorithm, "x"));
-    console.log("Is polygon y-monotone: ", isPolygonMonotone(pointsForAlgorithm, "y"));
-    console.log("Is polygon y-monotone v2: ", checkYMonotone(pointsForAlgorithm, [], []));
-    console.log(visualizationSteps);
+    if (!checkValidPolygon(points)) {
+      return "Punctele nu formeaza un poligon valid!"
+    }
+    if (!isPolygonMonotone(pointsForAlgorithm, 'y')) {
+      return `Poligonul nu e y-monoton!`;
+    }
     return visualizationSteps;
   };
 
