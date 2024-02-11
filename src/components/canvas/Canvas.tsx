@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
 import { ILine, Point } from "../../shared/models/geometry";
-import {
-  GREY_COLOR,
-  distanceBetweenPoints,
-  generateRandomNumber,
-  getLinesFromPoints,
-  getNextPointLetter,
-} from "../../shared/util";
+import { GREY_COLOR, distanceBetweenPoints, getLinesFromPoints, getNextPointLetter } from "../../shared/util";
 import "./Canvas.scss";
 import PointComponent from "./Point";
 import OverlayText from "./overlay-text/OverlayText";
@@ -15,7 +9,15 @@ import { find, isEqual, uniqueId } from "lodash";
 import LineComponent from "./Line";
 import { KonvaEventObject } from "konva/lib/Node";
 import { Vector2d } from "konva/lib/types";
-import { CanvasDimensions, getAxesLines, getAxesBoundaryPoints, getCenteredPoint } from "./helpers";
+import {
+  CanvasDimensions,
+  getAxesLines,
+  getAxesBoundaryPoints,
+  getCenteredPoint,
+  generateNextRandomPoint,
+  getRandomPointsMonotonePolygon,
+} from "./helpers";
+import { MonotoneType } from "../triangulation/triangulation-algorithm";
 
 interface CanvasProps {
   points: Point[];
@@ -63,8 +65,8 @@ export default function Canvas({
       setClosedPolygon(false);
       onReset();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldReset])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldReset]);
 
   // Set the canvas width and height
   useEffect(() => {
@@ -102,19 +104,17 @@ export default function Canvas({
     const points: Point[] = [];
 
     for (let i = 0; i < 10; i++) {
-      const x = generateRandomNumber(20, canvasDimensions.width - 20);
-      const y = generateRandomNumber(20, canvasDimensions.height - 20);
-      const label = getNextPointLetter(points[i - 1] ? points[i - 1].label : "");
-      points.push({ x, y, label, color: GREY_COLOR });
+      points.push(generateNextRandomPoint(20, canvasDimensions.width - 20, 20, canvasDimensions.height - 20, points));
     }
 
     setShowOverlayText(false);
     setPoints(points);
-    return points;
   };
 
-  const generateRandomPolygon = () => {
-    const points = generateRandomPoints();
+  const generateRandomMonotonePolygon = (type: MonotoneType = "y") => {
+    const points = getRandomPointsMonotonePolygon(canvasDimensions, type);
+    setShowOverlayText(false);
+    setPoints(points);
     setLines(getLinesFromPoints(points, GREY_COLOR, true));
   };
 
@@ -209,7 +209,10 @@ export default function Canvas({
         </Layer>
       </Stage>
       {showOverlayText && (
-        <OverlayText polygonMode={polygonMode} generate={polygonMode ? generateRandomPolygon : generateRandomPoints} />
+        <OverlayText
+          polygonMode={polygonMode}
+          generate={polygonMode ? generateRandomMonotonePolygon : generateRandomPoints}
+        />
       )}
     </div>
   );
