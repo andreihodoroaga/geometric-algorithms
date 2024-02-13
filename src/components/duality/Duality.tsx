@@ -239,7 +239,7 @@ export default function Duality() {
       </div>
 
       <div className="controls">
-        <div className="zoom-slider">
+        <div className="slider zoom-slider">
           <label>
             Zoom:
             <input

@@ -39,6 +39,44 @@
 
 .error-snackbar {
   .MuiSnackbarContent-root {
-    background-color: #FF5252;
+    background-color: #ff5252;
+  }
+}
+
+.controls {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .slider {
+    label {
+      display: flex;
+      align-items: center;
+      color: #666;
+      font-size: 14px;
+
+      input {
+        width: 100px;
+        margin-left: 8px;
+      }
+    }
+  }
+
+  .reset-button {
+    color: #666;
+
+    &.green {
+      color: #07a17b;
+    }
+
+    button {
+      padding: 4px 12px;
+      font-size: 12px;
+
+      .MuiButton-endIcon {
+        margin-left: 4px;
+      }
+    }
   }
 }

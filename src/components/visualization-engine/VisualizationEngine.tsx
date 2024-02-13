@@ -10,13 +10,18 @@ import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
 import { GREEN_COLOR, GREY_COLOR, ORANGE_COLOR, getLinesFromPoints } from "../../shared/util";
 import Canvas from "../canvas/Canvas";
 import Explanations from "../explanations/Explanations";
-import Button from "../button/Button";
+import { default as CustomButton } from "../button/Button";
 import { Menu, MenuItem } from "@szhsin/react-menu";
 import Snackbar from "@mui/material/Snackbar";
 import React from "react";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import { CanvasMode } from "../canvas/helpers";
+import Button from "@mui/material/Button";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import { Tooltip } from "react-tooltip";
+
+const SPEED_CONTROL_LS_KEY = "speedControl";
 
 enum RunMode {
   Automatic = "Automat",
@@ -52,6 +57,7 @@ interface VisualizationEngineProps {
   explanationsTitle: string;
   children: React.ReactNode;
   mode?: CanvasMode;
+  showSpeedControl?: boolean;
 }
 
 // A component to be used in every algorithm
@@ -60,7 +66,13 @@ export default function VisualizationEngine({
   explanationsTitle,
   children,
   mode,
+  showSpeedControl,
 }: VisualizationEngineProps) {
+  const minAlgorithmSpeedInMs = 200;
+  const speedUpdateStep = 200;
+  const speedRangeMin = 0;
+  const speedRangeMax = 10;
+
   const [points, setPoints] = useState<Point[]>([]);
   const [lines, setLines] = useState<ILine[]>([]);
   const [explanations, setExplanations] = useState<string[]>([]);
@@ -73,6 +85,11 @@ export default function VisualizationEngine({
   const [visualizationEnded, setVisualizationEnded] = useState(false);
   const [shouldResetCanvas, setShouldResetCanvas] = useState(false);
   const [snackbarErrorMessage, setSnackBarErrorMessage] = useState<string | null>(null);
+  const [speedControlValue, setSpeedControlValue] = useState(
+    localStorage.getItem(SPEED_CONTROL_LS_KEY)
+      ? parseInt(localStorage.getItem(SPEED_CONTROL_LS_KEY)!)
+      : speedRangeMax / 2
+  );
 
   useEffect(() => {
     if (algorithmStarted) {
@@ -113,6 +130,23 @@ export default function VisualizationEngine({
       clearInterval(automaticRunInterval);
     }
   }, [automaticRunInterval, visualizationEnded]);
+
+  useEffect(() => {
+    if (selectedRunMode !== RunMode.Automatic) {
+      return;
+    }
+
+    if (algorithmStarted && !isPaused) {
+      clearInterval(automaticRunInterval);
+      const speedStepsToAdd = speedRangeMax - speedControlValue;
+      setAutomaticRunInterval(
+        setInterval(() => {
+          setCurrentStepIndex((currIdx) => currIdx! + 1);
+        }, minAlgorithmSpeedInMs + speedUpdateStep * speedStepsToAdd)
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [algorithmStarted, isPaused, selectedRunMode, speedControlValue]);
 
   const addStepDrawings = (drawings: Drawing[]) => {
     setPoints(clearPointsFromCanvas(points));
@@ -194,19 +228,9 @@ export default function VisualizationEngine({
   };
 
   const startOrPauseAutomaticRun = () => {
-    if (visualizationEnded) {
-      resetEverything();
-      return;
-    }
-
     if (!algorithmStarted || isPaused) {
       setAlgorithmStarted(true);
       setIsPaused(false);
-      setAutomaticRunInterval(
-        setInterval(() => {
-          setCurrentStepIndex((currIdx) => currIdx! + 1);
-        }, 1000)
-      );
       return;
     }
 
@@ -228,6 +252,11 @@ export default function VisualizationEngine({
     setCurrentStepIndex((currIdx) => currIdx! + 1);
   };
 
+  const updateSpeedControlValue = (newValue: number) => {
+    setSpeedControlValue(newValue);
+    localStorage.setItem(SPEED_CONTROL_LS_KEY, newValue.toString());
+  };
+
   const handleCloseErrorSnackbar = () => {
     setSnackBarErrorMessage("");
   };
@@ -241,6 +270,7 @@ export default function VisualizationEngine({
   );
 
   const emptyCanvas = !points.length && !lines.length;
+  const disableResetButton = algorithmStarted && !isPaused && !visualizationEnded;
 
   return (
     <>
@@ -260,7 +290,12 @@ export default function VisualizationEngine({
       </div>
       <div className="panel-wrapper">
         {children}
-        <Menu menuButton={<Button content={selectedRunMode} dropdownBtn={true} />} transition>
+        <Menu
+          menuButton={
+            <CustomButton content={selectedRunMode} dropdownBtn={true} tooltip="Mod executie" showTooltip={true} />
+          }
+          transition
+        >
           {Object.values(RunMode).map((runMode) => (
             <MenuItem
               key={runMode}
@@ -272,25 +307,59 @@ export default function VisualizationEngine({
           ))}
         </Menu>
         {selectedRunMode === RunMode.Automatic ? (
-          <Button
+          <CustomButton
             onClick={() => startOrPauseAutomaticRun()}
-            disabled={emptyCanvas}
-            content={visualizationEnded ? "Reset" : !algorithmStarted || isPaused ? "Start" : "Pause"}
+            disabled={emptyCanvas || visualizationEnded}
+            content={visualizationEnded ? "Finalizat" : !algorithmStarted || isPaused ? "Start" : "Pause"}
             extraClass="primary"
             tooltip="Mai intai adauga puncte"
             showTooltip={emptyCanvas}
           />
         ) : (
-          <Button
+          <CustomButton
             onClick={() => startOrNextManualRun()}
-            disabled={emptyCanvas}
-            content={visualizationEnded ? "Reset" : !algorithmStarted ? "Start" : "Next"}
+            disabled={emptyCanvas || visualizationEnded}
+            content={visualizationEnded ? "Finalizat" : !algorithmStarted ? "Start" : "Next"}
             extraClass="primary"
             tooltip="Mai intai adauga puncte"
             showTooltip={emptyCanvas}
           />
         )}
       </div>
+      {showSpeedControl ?? (
+        <div className="controls">
+          <div className="slider speed-slider">
+            <label>
+              Viteza:
+              <input
+                type="range"
+                value={speedControlValue}
+                min={speedRangeMin}
+                max={speedRangeMax}
+                onChange={(e) => updateSpeedControlValue(+e.target.value)}
+              />
+            </label>
+          </div>
+          <div
+            className={`reset-button ${visualizationEnded ? "green" : ""}`}
+            data-tooltip-id="reset-btn-tooltip"
+            data-tooltip-content={"Algoritmul e in desfasurare"}
+            data-tooltip-place="top"
+            data-tooltip-hidden={!disableResetButton}
+          >
+            <Button
+              variant="text"
+              endIcon={<RestartAltIcon />}
+              color="inherit"
+              onClick={resetEverything}
+              disabled={disableResetButton}
+            >
+              Reset
+            </Button>
+            <Tooltip id="reset-btn-tooltip" />
+          </div>
+        </div>
+      )}
       <Snackbar
         className="error-snackbar"
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
