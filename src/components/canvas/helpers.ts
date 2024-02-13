@@ -1,11 +1,17 @@
 import { ILine, Point } from "../../shared/models/geometry";
 import { BLACK_COLOR, GREY_COLOR, LIGHT_GREY_COLOR, generateRandomNumber, getNextPointLetter } from "../../shared/util";
-import { MonotoneType } from "../triangulation/triangulation-algorithm";
+import { MonotoneType, checkSegmentsIntersect } from "../triangulation/triangulation-algorithm";
 
 export type CanvasDimensions = {
   width: number;
   height: number;
 };
+
+export enum CanvasMode {
+  polygon = "poligon",
+  points = "puncte",
+  segments = "segmente",
+}
 
 export const getAxesLines = (canvasDimensions: CanvasDimensions) => {
   const xAxis: ILine = {
@@ -136,4 +142,48 @@ export const getRandomPointsMonotonePolygon = (canvasDimensions: CanvasDimension
   }
 
   return points;
+};
+
+export const generateRandomNonIntersectingSegments = (canvasDimensions: CanvasDimensions) => {
+  const points: Point[] = [];
+  // the number of points must be even (each pair of consecutive points will make up a segment)
+  const numPoints = 15 * 2;
+
+  for (let i = 0; i < numPoints; i++) {
+    points.push(generateNextRandomPoint(20, canvasDimensions.width - 20, 20, canvasDimensions.height - 20, points));
+  }
+
+  const segments = [];
+  const finalPoints = [];
+  for (let i = 0; i < numPoints; i += 2) {
+    const newSegment: ILine = {
+      startPoint: points[i],
+      endPoint: points[i + 1],
+      color: GREY_COLOR,
+    };
+
+    let intersectsExistingSegment = false;
+    segments.forEach((segment) => {
+      intersectsExistingSegment ||= checkSegmentsIntersect(
+        segment.startPoint,
+        segment.endPoint,
+        newSegment.startPoint,
+        newSegment.endPoint
+      );
+    });
+
+    if (!intersectsExistingSegment) {
+      const startPointNewLabel = getNextPointLetter(
+        finalPoints.length ? finalPoints[finalPoints.length - 1].label : ""
+      );
+      const endPointNewLabel = getNextPointLetter(startPointNewLabel);
+      newSegment.startPoint = { ...newSegment.startPoint, label: startPointNewLabel };
+      newSegment.endPoint = { ...newSegment.endPoint, label: endPointNewLabel };
+
+      finalPoints.push(newSegment.startPoint, newSegment.endPoint);
+      segments.push(newSegment);
+    }
+  }
+
+  return { points: finalPoints, segments };
 };

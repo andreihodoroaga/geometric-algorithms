@@ -8,6 +8,7 @@ import { Point } from "../../shared/models/geometry";
 import { comparatorPointsByXAscending, determinePointsForAlgorithm, sortList } from "../../shared/util";
 import { computeGrahamScanSteps, computeJarvisMarchExecutionSteps } from "./convex-hull-algorithm";
 import VisualizationEngine from "../visualization-engine/VisualizationEngine";
+import { CanvasMode } from "../canvas/helpers";
 
 enum ConvexHullAlgorithms {
   GrahamScan = "Graham Scan",
@@ -19,7 +20,7 @@ export default function ConvexHull() {
 
   const computeVisualizationSteps = (points: Point[]) => {
     const pointsForAlgorithm = determinePointsForAlgorithm(points);
-    
+
     if (selectedAlgorithm === ConvexHullAlgorithms.GrahamScan) {
       const sortedPointsForAlgorithm = sortList(pointsForAlgorithm, comparatorPointsByXAscending);
       return computeGrahamScanSteps(sortedPointsForAlgorithm);
@@ -28,7 +29,11 @@ export default function ConvexHull() {
   };
 
   return (
-    <VisualizationEngine computeVisualizationSteps={computeVisualizationSteps} explanationsTitle={selectedAlgorithm}>
+    <VisualizationEngine
+      computeVisualizationSteps={computeVisualizationSteps}
+      explanationsTitle={selectedAlgorithm}
+      mode={CanvasMode.points}
+    >
       <Menu menuButton={<Button content={selectedAlgorithm} dropdownBtn={true} />} transition>
         {Object.values(ConvexHullAlgorithms).map((algorithm) => (
           <MenuItem

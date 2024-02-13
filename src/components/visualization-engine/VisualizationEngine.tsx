@@ -14,8 +14,9 @@ import Button from "../button/Button";
 import { Menu, MenuItem } from "@szhsin/react-menu";
 import Snackbar from "@mui/material/Snackbar";
 import React from "react";
-import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import { CanvasMode } from "../canvas/helpers";
 
 enum RunMode {
   Automatic = "Automat",
@@ -50,7 +51,7 @@ interface VisualizationEngineProps {
   computeVisualizationSteps: (points: Point[]) => VisualizationStep[] | string;
   explanationsTitle: string;
   children: React.ReactNode;
-  polygonMode?: boolean;
+  mode?: CanvasMode;
 }
 
 // A component to be used in every algorithm
@@ -58,7 +59,7 @@ export default function VisualizationEngine({
   computeVisualizationSteps,
   explanationsTitle,
   children,
-  polygonMode,
+  mode,
 }: VisualizationEngineProps) {
   const [points, setPoints] = useState<Point[]>([]);
   const [lines, setLines] = useState<ILine[]>([]);
@@ -76,7 +77,7 @@ export default function VisualizationEngine({
   useEffect(() => {
     if (algorithmStarted) {
       const visualizationPointsOrError = computeVisualizationSteps(points);
-      if (typeof visualizationPointsOrError === 'string') {
+      if (typeof visualizationPointsOrError === "string") {
         setSnackBarErrorMessage(visualizationPointsOrError);
         setVisualizationEnded(true);
       } else {
@@ -111,7 +112,7 @@ export default function VisualizationEngine({
     if (visualizationEnded) {
       clearInterval(automaticRunInterval);
     }
-  }, [automaticRunInterval, visualizationEnded])
+  }, [automaticRunInterval, visualizationEnded]);
 
   const addStepDrawings = (drawings: Drawing[]) => {
     setPoints(clearPointsFromCanvas(points));
@@ -228,17 +229,12 @@ export default function VisualizationEngine({
   };
 
   const handleCloseErrorSnackbar = () => {
-    setSnackBarErrorMessage('');
-  }
+    setSnackBarErrorMessage("");
+  };
 
   const snackBarAction = (
     <React.Fragment>
-      <IconButton
-        size="small"
-        aria-label="close"
-        color="inherit"
-        onClick={handleCloseErrorSnackbar}
-      >
+      <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseErrorSnackbar}>
         <CloseIcon fontSize="small" />
       </IconButton>
     </React.Fragment>
@@ -254,7 +250,7 @@ export default function VisualizationEngine({
           setPoints={setPoints}
           lines={lines}
           setLines={setLines}
-          polygonMode={polygonMode}
+          mode={mode}
           shouldReset={shouldResetCanvas}
           onReset={() => setShouldResetCanvas(false)}
         />
@@ -300,7 +296,7 @@ export default function VisualizationEngine({
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         open={!!snackbarErrorMessage}
         onClose={handleCloseErrorSnackbar}
-        message={snackbarErrorMessage}  
+        message={snackbarErrorMessage}
         action={snackBarAction}
         ClickAwayListenerProps={{ onClickAway: () => null }}
         transitionDuration={200}

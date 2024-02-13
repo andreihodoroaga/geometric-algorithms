@@ -1,11 +1,8 @@
 import { Point } from "../../shared/models/geometry";
 import { determinePointsForAlgorithm } from "../../shared/util";
+import { CanvasMode } from "../canvas/helpers";
 import VisualizationEngine from "../visualization-engine/VisualizationEngine";
-import {
-  checkValidPolygon,
-  computeTriangulationSteps,
-  isPolygonMonotone
-} from "./triangulation-algorithm";
+import { checkValidPolygon, computeTriangulationSteps, isPolygonMonotone } from "./triangulation-algorithm";
 
 export default function Triangulation() {
   // Returns the visualization steps or an error
@@ -13,10 +10,10 @@ export default function Triangulation() {
     const pointsForAlgorithm = determinePointsForAlgorithm(points);
     const visualizationSteps = computeTriangulationSteps(pointsForAlgorithm);
     if (!checkValidPolygon(points)) {
-      return "Punctele nu formeaza un poligon valid!"
+      return "Punctele nu formeaza un poligon valid!";
     }
-    if (!isPolygonMonotone(pointsForAlgorithm, 'y')) {
-      return `Poligonul nu e y-monoton!`;
+    if (!isPolygonMonotone(pointsForAlgorithm, "y")) {
+      return "Poligonul nu e y-monoton!";
     }
     return visualizationSteps;
   };
@@ -25,7 +22,7 @@ export default function Triangulation() {
     <VisualizationEngine
       computeVisualizationSteps={computeVisualizationSteps}
       explanationsTitle="Triangulare"
-      polygonMode={true}
+      mode={CanvasMode.polygon}
     >
     </VisualizationEngine>
   );

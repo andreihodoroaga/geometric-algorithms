@@ -16,6 +16,8 @@ import {
   getCenteredPoint,
   generateNextRandomPoint,
   getRandomPointsMonotonePolygon,
+  CanvasMode,
+  generateRandomNonIntersectingSegments,
 } from "./helpers";
 import { MonotoneType } from "../triangulation/triangulation-algorithm";
 
@@ -24,7 +26,7 @@ interface CanvasProps {
   setPoints: React.Dispatch<React.SetStateAction<Point[]>>;
   lines: ILine[];
   setLines: React.Dispatch<React.SetStateAction<ILine[]>>;
-  polygonMode?: boolean;
+  mode?: CanvasMode;
   hasOverlayText?: boolean;
   axes?: boolean;
   originInCenter?: boolean;
@@ -39,7 +41,7 @@ export default function Canvas({
   setPoints,
   lines,
   setLines,
-  polygonMode,
+  mode,
   hasOverlayText = true,
   axes = false,
   originInCenter = false,
@@ -118,11 +120,18 @@ export default function Canvas({
     setLines(getLinesFromPoints(points, GREY_COLOR, true));
   };
 
-  const addPolygonLine = (newPoint: Point) => {
+  const generateRandomSegments = () => {
+    const { points, segments } = generateRandomNonIntersectingSegments(canvasDimensions);
+    setShowOverlayText(false);
+    setPoints(points);
+    setLines(segments);
+  };
+
+  const addSegmentOnCanvas = (newPoint: Point, forPolygon=false) => {
     const lastPoint = points[points.length - 1];
     const nextPoint = checkClosePoint(newPoint) ?? newPoint;
 
-    if (find(points, (point) => point.label === nextPoint.label)) {
+    if (forPolygon && find(points, (point) => point.label === nextPoint.label)) {
       if (!isEqual(nextPoint, points[0])) {
         return;
       }
@@ -160,9 +169,12 @@ export default function Canvas({
     }
 
     const newPoint = getNextPoint(e.target.getStage()!.getPointerPosition()!);
-
-    if (polygonMode && points.length > 0) {
-      addPolygonLine(newPoint);
+    
+    if (mode === CanvasMode.polygon && points.length > 0) {
+      addSegmentOnCanvas(newPoint, true);
+    }
+    if (mode === CanvasMode.segments && points.length % 2 == 1) {
+      addSegmentOnCanvas(newPoint);
     }
     if (checkClosePoint(newPoint)) {
       return;
@@ -194,6 +206,13 @@ export default function Canvas({
     return linesToShow.map((line) => <LineComponent line={line} key={uniqueId()} />);
   };
 
+  const generateMethod =
+    mode === CanvasMode.points
+      ? generateRandomPoints
+      : mode === CanvasMode.polygon
+      ? generateRandomMonotonePolygon
+      : generateRandomSegments;
+
   return (
     <div className="canvas-component">
       <Stage width={canvasDimensions.width} height={canvasDimensions.height} onClick={(e) => handleCanvasClick(e)}>
@@ -208,12 +227,7 @@ export default function Canvas({
           {getLinesToShow()}
         </Layer>
       </Stage>
-      {showOverlayText && (
-        <OverlayText
-          polygonMode={polygonMode}
-          generate={polygonMode ? generateRandomMonotonePolygon : generateRandomPoints}
-        />
-      )}
+      {showOverlayText && <OverlayText mode={mode} generate={generateMethod} />}
     </div>
   );
 }
