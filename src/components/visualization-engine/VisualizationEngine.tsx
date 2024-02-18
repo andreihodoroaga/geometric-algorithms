@@ -23,6 +23,8 @@ import { Tooltip } from "react-tooltip";
 
 const SPEED_CONTROL_LS_KEY = "speedControl";
 
+export const RUNNING_ALGORITHM_LABEL = "Algoritmul e in desfasurare";
+
 enum RunMode {
   Automatic = "Automat",
   Manual = "Manual",
@@ -283,6 +285,7 @@ export default function VisualizationEngine({
           mode={mode}
           shouldReset={shouldResetCanvas}
           onReset={() => setShouldResetCanvas(false)}
+          disabled={algorithmStarted}
         />
       </div>
       <div className="explanations-wrapper">
@@ -292,7 +295,13 @@ export default function VisualizationEngine({
         {children}
         <Menu
           menuButton={
-            <CustomButton content={selectedRunMode} dropdownBtn={true} tooltip="Mod executie" showTooltip={true} />
+            <CustomButton
+              content={selectedRunMode}
+              dropdownBtn={true}
+              tooltip={!algorithmStarted ? "Mod executie" : RUNNING_ALGORITHM_LABEL}
+              showTooltip={true}
+              disabled={algorithmStarted}
+            />
           }
           transition
         >
@@ -343,7 +352,7 @@ export default function VisualizationEngine({
           <div
             className={`reset-button ${visualizationEnded ? "green" : ""}`}
             data-tooltip-id="reset-btn-tooltip"
-            data-tooltip-content={"Algoritmul e in desfasurare"}
+            data-tooltip-content={RUNNING_ALGORITHM_LABEL}
             data-tooltip-place="top"
             data-tooltip-hidden={!disableResetButton}
           >
