@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
-import { ILine, Point } from "../../shared/models/geometry";
+import { ICircle, ILine, IParabola, Point } from "../../shared/models/geometry";
 import { GREY_COLOR, distanceBetweenPoints, getLinesFromPoints, getNextPointLetter } from "../../shared/util";
 import "./Canvas.scss";
 import PointComponent from "./Point";
@@ -20,12 +20,20 @@ import {
   generateRandomNonIntersectingSegments,
 } from "./helpers";
 import { MonotoneType } from "../triangulation/triangulation-algorithm";
+import Parabola from "./Parabola";
+import CircleComponent from "./Circle";
 
 interface CanvasProps {
   points: Point[];
   setPoints: React.Dispatch<React.SetStateAction<Point[]>>;
   lines: ILine[];
   setLines: React.Dispatch<React.SetStateAction<ILine[]>>;
+  canvasDimensions: CanvasDimensions;
+  setCanvasDimensions: React.Dispatch<React.SetStateAction<CanvasDimensions>>;
+  parabolas?: IParabola[];
+  setParabolas?: React.Dispatch<React.SetStateAction<IParabola[]>>;
+  circles?: ICircle[];
+  setCircles?: React.Dispatch<React.SetStateAction<ICircle[]>>;
   mode?: CanvasMode;
   hasOverlayText?: boolean;
   axes?: boolean;
@@ -41,6 +49,12 @@ export default function Canvas({
   setPoints,
   lines,
   setLines,
+  canvasDimensions,
+  setCanvasDimensions,
+  parabolas,
+  setParabolas,
+  circles,
+  setCircles,
   mode,
   hasOverlayText = true,
   axes = false,
@@ -50,10 +64,6 @@ export default function Canvas({
   shouldReset,
   onReset,
 }: CanvasProps) {
-  const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({
-    width: 0,
-    height: 0,
-  });
   const [showOverlayText, setShowOverlayText] = useState(hasOverlayText);
   const [closedPolygon, setClosedPolygon] = useState(false);
   const [axesLines, setAxesLines] = useState<ILine[]>([]);
@@ -64,6 +74,8 @@ export default function Canvas({
       setShowOverlayText(true);
       setPoints([]);
       setLines([]);
+      setCircles?.([]);
+      setParabolas?.([]);
       setClosedPolygon(false);
       onReset();
     }
@@ -86,7 +98,7 @@ export default function Canvas({
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, []);
+  }, [setCanvasDimensions]);
 
   // There is an implicit assumption that if the axes are shown, then
   // the origin is in the middle (aka originInCenter=true) and axisMultiplier is set
@@ -127,7 +139,7 @@ export default function Canvas({
     setLines(segments);
   };
 
-  const addSegmentOnCanvas = (newPoint: Point, forPolygon=false) => {
+  const addSegmentOnCanvas = (newPoint: Point, forPolygon = false) => {
     const lastPoint = points[points.length - 1];
     const nextPoint = checkClosePoint(newPoint) ?? newPoint;
 
@@ -169,7 +181,7 @@ export default function Canvas({
     }
 
     const newPoint = getNextPoint(e.target.getStage()!.getPointerPosition()!);
-    
+
     if (mode === CanvasMode.polygon && points.length > 0) {
       addSegmentOnCanvas(newPoint, true);
     }
@@ -225,6 +237,12 @@ export default function Canvas({
           ))}
           {getPointsToShow()}
           {getLinesToShow()}
+          {parabolas?.map((parabola) => (
+            <Parabola parabola={parabola} key={uniqueId()} />
+          ))}
+          {circles?.map((circle) => (
+            <CircleComponent circle={circle} key={uniqueId()} />
+          ))}
         </Layer>
       </Stage>
       {showOverlayText && <OverlayText mode={mode} generate={generateMethod} />}

@@ -7,6 +7,7 @@ import { GREY_COLOR } from "../../shared/util";
 import randomColor from "randomcolor";
 import "./Duality.scss";
 import "../../shared/scss/custom-slider.scss";
+import { CanvasDimensions } from "../canvas/helpers";
 
 export default function Duality() {
   const [primalPoints, setPrimalPoints] = useState<Point[]>([]);
@@ -20,6 +21,10 @@ export default function Duality() {
   const [lineY, setLineY] = useState<string>("");
   const [axisMultiplier, setAxisMultiplier] = useState(10);
   const OUT_OF_BOUNDS_X = 1000; // used to simulate an "infinite" line
+  const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({
+    width: 0,
+    height: 0,
+  });
 
   // TODO: no longer reset these when changing the axisMultiplier
   // move the axisMultiplier state to the canvas, and make it so that the points from here
@@ -158,6 +163,8 @@ export default function Duality() {
           originInCenter={true}
           disabled={true}
           axisMultiplier={axisMultiplier}
+          canvasDimensions={canvasDimensions}
+          setCanvasDimensions={setCanvasDimensions}
         />
         <Canvas
           points={dualPoints}
@@ -169,6 +176,8 @@ export default function Duality() {
           originInCenter={true}
           disabled={true}
           axisMultiplier={axisMultiplier}
+          canvasDimensions={canvasDimensions}
+          setCanvasDimensions={setCanvasDimensions}
         />
       </div>
       <div className="explanations-wrapper">

@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import {
   DEFAULT_POINT_SIZE,
+  ICircle,
   ILine,
+  IParabola,
   Point,
   convertPointBetweenAlgorithmAndCanvas,
+  convertSimplePointBetweenAlgorithmAndCanvas,
   defaultDash,
 } from "../../shared/models/geometry";
 import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
-import { GREEN_COLOR, GREY_COLOR, ORANGE_COLOR, getLinesFromPoints } from "../../shared/util";
+import { GREEN_COLOR, GREY_COLOR, getLinesFromPoints } from "../../shared/util";
 import Canvas from "../canvas/Canvas";
 import Explanations from "../explanations/Explanations";
 import { default as CustomButton } from "../button/Button";
@@ -16,7 +19,7 @@ import Snackbar from "@mui/material/Snackbar";
 import React from "react";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
-import { CanvasMode } from "../canvas/helpers";
+import { CanvasDimensions, CanvasMode } from "../canvas/helpers";
 import Button from "@mui/material/Button";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { Tooltip } from "react-tooltip";
@@ -30,7 +33,7 @@ enum RunMode {
   Manual = "Manual",
 }
 
-// at each step only the green points and lines should remain
+// at each step only the green points should remain
 const clearPointsFromCanvas = (points: Point[]) => {
   return points.map((point) =>
     point.color === GREEN_COLOR
@@ -43,22 +46,11 @@ const clearPointsFromCanvas = (points: Point[]) => {
   );
 };
 
-const clearLinesFromCanvas = (lines: ILine[]) => {
-  return lines.map((line) =>
-    [GREEN_COLOR, ORANGE_COLOR].includes(line.color)
-      ? line
-      : {
-          ...line,
-          color: GREY_COLOR,
-        }
-  );
-};
-
 interface VisualizationEngineProps {
-  computeVisualizationSteps: (points: Point[]) => VisualizationStep[] | string;
+  computeVisualizationSteps: (points: Point[], canvasDimensions: CanvasDimensions) => VisualizationStep[] | string;
   explanationsTitle: string;
   children: React.ReactNode;
-  mode?: CanvasMode;
+  mode: CanvasMode;
   showSpeedControl?: boolean;
 }
 
@@ -70,13 +62,15 @@ export default function VisualizationEngine({
   mode,
   showSpeedControl,
 }: VisualizationEngineProps) {
-  const minAlgorithmSpeedInMs = 200;
-  const speedUpdateStep = 200;
+  const minAlgorithmSpeedInMs = 20;
+  const speedUpdateStep = 50;
   const speedRangeMin = 0;
   const speedRangeMax = 10;
 
   const [points, setPoints] = useState<Point[]>([]);
   const [lines, setLines] = useState<ILine[]>([]);
+  const [parabolas, setParabolas] = useState<IParabola[]>([]);
+  const [circles, setCircles] = useState<ICircle[]>([]);
   const [explanations, setExplanations] = useState<string[]>([]);
   const [algorithmStarted, setAlgorithmStarted] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
@@ -92,16 +86,20 @@ export default function VisualizationEngine({
       ? parseInt(localStorage.getItem(SPEED_CONTROL_LS_KEY)!)
       : speedRangeMax / 2
   );
+  const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({
+    width: 0,
+    height: 0,
+  });
 
   useEffect(() => {
     if (algorithmStarted) {
-      const visualizationPointsOrError = computeVisualizationSteps(points);
+      const visualizationPointsOrError = computeVisualizationSteps(points, canvasDimensions);
       if (typeof visualizationPointsOrError === "string") {
         setSnackBarErrorMessage(visualizationPointsOrError);
         setVisualizationEnded(true);
       } else {
         setCurrentStepIndex(0);
-        setSteps(computeVisualizationSteps(points) as VisualizationStep[]);
+        setSteps(visualizationPointsOrError as VisualizationStep[]);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -152,12 +150,17 @@ export default function VisualizationEngine({
 
   const addStepDrawings = (drawings: Drawing[]) => {
     setPoints(clearPointsFromCanvas(points));
-    setLines(clearLinesFromCanvas(lines));
 
     for (const drawing of drawings) {
       const { type, element, style, color, size } = drawing;
 
       switch (type) {
+        case "updateState": {
+          setLines([]);
+          setParabolas([]);
+          setCircles([]);
+          break;
+        }
         case "updateConvexHullList": {
           convexHullUpdatedHandler(element as Point[]);
           break;
@@ -179,6 +182,24 @@ export default function VisualizationEngine({
           setLines(getLinesFromPoints(element, GREEN_COLOR));
           break;
         }
+        case "parabola": {
+          let { startPoint, endPoint, controlPoint } = element as IParabola;
+          startPoint = convertSimplePointBetweenAlgorithmAndCanvas(startPoint);
+          endPoint = convertSimplePointBetweenAlgorithmAndCanvas(endPoint);
+          controlPoint = convertSimplePointBetweenAlgorithmAndCanvas(controlPoint);
+
+          setParabolas((oldParabolas) => [...oldParabolas, { startPoint, endPoint, controlPoint }]);
+          break;
+        }
+        case "circle": {
+          const circle = element as ICircle;
+          const circleForCanvas = {
+            center: convertSimplePointBetweenAlgorithmAndCanvas(circle.center),
+            radius: circle.radius,
+          };
+          setCircles((oldCircles) => [...oldCircles, circleForCanvas]);
+          break;
+        }
         default:
           break;
       }
@@ -189,7 +210,7 @@ export default function VisualizationEngine({
     const newLine: ILine = {
       startPoint,
       endPoint,
-      color: color!,
+      color,
       ...(dash && { dash: defaultDash }),
     };
     setLines((prevLines) => [...prevLines, newLine]);
@@ -282,6 +303,10 @@ export default function VisualizationEngine({
           setPoints={setPoints}
           lines={lines}
           setLines={setLines}
+          canvasDimensions={canvasDimensions}
+          setCanvasDimensions={setCanvasDimensions}
+          parabolas={parabolas}
+          circles={circles}
           mode={mode}
           shouldReset={shouldResetCanvas}
           onReset={() => setShouldResetCanvas(false)}

@@ -1,4 +1,4 @@
-import { ILine, Point, convertPointBetweenAlgorithmAndCanvas } from "./models/geometry";
+import { ILine, Point, SimplePoint, convertPointBetweenAlgorithmAndCanvas } from "./models/geometry";
 
 export const POINT_RADIUS = 5;
 export const POINT_COORDINATE_MAX_VALUE = 50;
@@ -124,4 +124,22 @@ export const isPointInList = (point: Point, points: Point[]) => {
 // points for algorithm: origin in bottom left (so the alg. gets the points as we see them)
 export const determinePointsForAlgorithm = (points: Point[]) => {
   return points.map((point) => convertPointBetweenAlgorithmAndCanvas(point));
+};
+
+export const getPointsWithIncreasedDistanceBetweenCloseOnes = <T extends SimplePoint>(points: T[]) => {
+  const updatedPoints = points.slice();
+
+  for (let i = 0; i < updatedPoints.length - 1; i++) {
+    for (let j = i + 1; j < updatedPoints.length; j++) {
+      if (Math.abs(updatedPoints[i].x - updatedPoints[j].x) < 0.1) {
+        if (updatedPoints[i].x >= updatedPoints[j].x) {
+          updatedPoints[i].x += 0.1;
+        } else {
+          updatedPoints[j].x += 0.1;
+        }
+      }
+    }
+  }
+
+  return updatedPoints;
 };
