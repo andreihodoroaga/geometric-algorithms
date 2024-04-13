@@ -1,7 +1,9 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
-import { RxHamburgerMenu } from "react-icons/rx";
 import "./Navbar.scss";
+
+import { useState } from "react";
+
+import { RxHamburgerMenu } from "react-icons/rx";
+import { NavLink } from "react-router-dom";
 
 export default function Navbar() {
   const [showAlgorithms, setShowAlgorithms] = useState(true);
@@ -9,9 +11,11 @@ export default function Navbar() {
   return (
     <nav>
       <div className="logo">
-        <NavLink to={`/geometric-algorithms`} className={({ isActive, isPending }) => (isPending ? "pending" : isActive ? "active" : "")}>
-          Logo
-          <span>Home</span>
+        <NavLink
+          to={`/geometric-algorithms`}
+          className={({ isActive, isPending }) => (isPending ? "pending" : isActive ? "active" : "")}
+        >
+          Home
         </NavLink>
       </div>
       <ul className={showAlgorithms ? "flex" : "hidden"}>
