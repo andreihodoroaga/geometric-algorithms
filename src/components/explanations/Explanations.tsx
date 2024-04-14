@@ -25,9 +25,11 @@ export default function Explanations({ explanations, algorithm }: ExplanationsPr
       <h2 className="explanations-title">Pasi executie {algorithm}</h2>
       <div className="explanation-list">
         {explanations.map((explanation, idx) => (
-          <p key={idx} className={`explanation ${idx === explanations.length - 1 ? "last" : ""}`}>
-            {idx + 1}. {explanation}
-          </p>
+          <p
+            key={idx}
+            className={`explanation ${idx === explanations.length - 1 ? "last" : ""}`}
+            dangerouslySetInnerHTML={{ __html: `${idx + 1}. ${explanation}` }}
+          ></p>
         ))}
         <div ref={bottomRef} className="explanation-list-bottom"></div>
       </div>

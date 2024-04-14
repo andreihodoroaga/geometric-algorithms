@@ -14,9 +14,10 @@ import { getLinesFromPoints, GREEN_COLOR, GREY_COLOR, ORANGE_COLOR, RED_COLOR, s
 
 type ConvexHullPart = "lower" | "upper";
 
-interface ConvexHull {
+interface PartialConvexHull {
   points: Point[];
   edges: ILine[];
+  htmlLabel: string;
 }
 
 const getFinalConvexHullPart = (partVisualizationSteps: VisualizationStep[]) => {
@@ -388,11 +389,11 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
   return algorithmGraphicIndications;
 };
 
-const chanPartialHullVisualizationSteps = (subsets: Point[][]): VisualizationStep[] => {
-  return subsets.map((subset, i) => {
+const chanPartialHullVisualizationSteps = (partialHulls: PartialConvexHull[]): VisualizationStep[] => {
+  return partialHulls.map(({ points, htmlLabel }) => {
     return {
-      explanation: `Se formeaza submultimea P${i + 1} cu ${subset.length} element${subset.length === 1 ? "" : "e"}.`,
-      graphicDrawingsStepList: subset.map((point) => ({
+      explanation: `Se formeaza submultimea ${htmlLabel} cu ${points.length} element${points.length === 1 ? "" : "e"}.`,
+      graphicDrawingsStepList: points.map((point) => ({
         type: "point",
         element: point,
         color: point.color,
@@ -420,9 +421,9 @@ const chanPartialHullsPoints = (points: Point[], m: number): Point[][] => {
 };
 
 const chanPartialHulls = (partialHullsPoints: Point[][]) => {
-  const partialHulls: ConvexHull[] = [];
+  const partialHulls: PartialConvexHull[] = [];
 
-  partialHullsPoints.forEach((pointSubset) => {
+  partialHullsPoints.forEach((pointSubset, i) => {
     let convexHullEdges: ILine[] = [];
 
     if (pointSubset.length > 1) {
@@ -436,15 +437,16 @@ const chanPartialHulls = (partialHullsPoints: Point[][]) => {
     partialHulls.push({
       points: pointSubset,
       edges: convexHullEdges,
+      htmlLabel: htmlLabelWithColor(`P${i + 1}`, pointSubset[0].color),
     });
   });
 
   return partialHulls;
 };
 
-const chanJarvisMarchVisualizationSteps = (partialHulls: ConvexHull[]) => {
-  return partialHulls.map((partialHull, i) => ({
-    explanation: `Este determinata infasuratoarea convexa a submultimii P${i + 1} folosind Jarvis March.`,
+const chanJarvisMarchVisualizationSteps = (partialHulls: PartialConvexHull[]) => {
+  return partialHulls.map((partialHull) => ({
+    explanation: `Este determinata infasuratoarea convexa a submultimii ${partialHull.htmlLabel} folosind Jarvis March.`,
     graphicDrawingsStepList: partialHull.edges.map((edge) => ({
       type: "line",
       element: [edge.startPoint, edge.endPoint],
@@ -461,31 +463,22 @@ const pointThatFormsMaxAngle = (partialHullPoints: Point[], prevPk: SimplePoint,
   });
 };
 
-const initialChanAlgorithmSteps = (
-  partialHullsPoints: Point[][],
-  partialHulls: ConvexHull[],
-  points: Point[],
-  m: number
-) => {
+const initialChanAlgorithmSteps = (partialHulls: PartialConvexHull[], points: Point[], m: number) => {
   const result: VisualizationStep[] = [];
 
   result.push({
+    explanation: `Multimea de puncte este partitionata aleator in submultimi cu cel mult ${m} elemente (m = ${m}).`,
     graphicDrawingsStepList: [{ type: "updateState" }, ...pointsResetToInitialColor(points)],
   });
-  result.push({
-    explanation: `Multimea de puncte este partitionata in submultimi cu cel mult ${m} elemente (m = ${m}).`,
-  });
-  result.push(...chanPartialHullVisualizationSteps(partialHullsPoints));
+  result.push(...chanPartialHullVisualizationSteps(partialHulls));
   result.push(...chanJarvisMarchVisualizationSteps(partialHulls));
 
   return result;
 };
 
-const visualizationStepMaxAnglePoint = (point: Point, startPoint: Point, endPoint: Point, subsetIdx: number) => {
+const visualizationStepMaxAnglePoint = (point: Point, startPoint: Point, endPoint: Point, subsetLabel: string) => {
   return {
-    explanation: `Din submultimea P${subsetIdx + 1}, punctul ${point.label} formeaza unghiul maxim cu punctele ${
-      startPoint.label
-    } si ${endPoint.label}`,
+    explanation: `Din submultimea ${subsetLabel}, punctul ${point.label} formeaza unghiul maxim cu punctele ${startPoint.label} si ${endPoint.label}`,
     graphicDrawingsStepList: [
       {
         type: "point",
@@ -503,6 +496,10 @@ const pointsResetToInitialColor = (points: Point[]): Drawing[] => {
     element: p,
     color: p.color,
   }));
+};
+
+const htmlLabelWithColor = (label: string, color: string) => {
+  return `<span style="color: ${color}">${label}</span>`;
 };
 
 const visualizationStepsMaxAngleSubsets = (
@@ -603,7 +600,7 @@ const chanSubstepFinalVisualizationIncomplete = (m: number) => {
   ];
 };
 
-const chanAlgorithmSubstep = (points: Point[], partialHullsPoints: Point[][], m: number) => {
+const chanAlgorithmSubstep = (points: Point[], partialHulls: PartialConvexHull[], m: number) => {
   const visualizationSteps: VisualizationStep[] = [];
   const p0 = {
     x: 0,
@@ -619,11 +616,11 @@ const chanAlgorithmSubstep = (points: Point[], partialHullsPoints: Point[][], m:
   for (let k = 1; k <= m; k++) {
     const q: Point[] = [];
 
-    for (let i = 0; i < partialHullsPoints.length; i++) {
-      const qi = pointThatFormsMaxAngle(partialHullsPoints[i], p[k - 1], p[k]);
+    for (let i = 0; i < partialHulls.length; i++) {
+      const qi = pointThatFormsMaxAngle(partialHulls[i].points, p[k - 1], p[k]);
       q.push(qi);
 
-      visualizationSteps.push(visualizationStepMaxAnglePoint(qi, p[k - 1], p[k], i));
+      visualizationSteps.push(visualizationStepMaxAnglePoint(qi, p[k - 1], p[k], partialHulls[i].htmlLabel));
     }
 
     const pkNext = pointThatFormsMaxAngle(q, p[k - 1], p[k]);
@@ -653,12 +650,12 @@ export const computeChanExecutionSteps = (points: Point[]) => {
     const partialHullsPoints = chanPartialHullsPoints(points, m);
     const partialHulls = chanPartialHulls(partialHullsPoints);
 
-    const [convexHullPoints, substepsVisualizationSteps] = chanAlgorithmSubstep(points, partialHullsPoints, m);
+    const [convexHullPoints, substepsVisualizationSteps] = chanAlgorithmSubstep(points, partialHulls, m);
     if (convexHullPoints) {
       running = false;
     }
 
-    visualizationSteps.push(...initialChanAlgorithmSteps(partialHullsPoints, partialHulls, points, m));
+    visualizationSteps.push(...initialChanAlgorithmSteps(partialHulls, points, m));
     visualizationSteps.push(...(substepsVisualizationSteps as VisualizationStep[]));
 
     t++;
