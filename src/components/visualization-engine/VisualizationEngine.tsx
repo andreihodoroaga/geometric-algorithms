@@ -62,8 +62,8 @@ export default function VisualizationEngine({
   mode,
   showSpeedControl,
 }: VisualizationEngineProps) {
-  const minAlgorithmSpeedInMs = 20;
-  const speedUpdateStep = 50;
+  const minAlgorithmSpeedInMs = 25;
+  const speedUpdateStep = 125;
   const speedRangeMin = 0;
   const speedRangeMax = 10;
 
@@ -149,8 +149,6 @@ export default function VisualizationEngine({
   }, [algorithmStarted, isPaused, selectedRunMode, speedControlValue]);
 
   const addStepDrawings = (drawings: Drawing[]) => {
-    setPoints(clearPointsFromCanvas(points));
-
     for (const drawing of drawings) {
       const { type, element, style, color, size } = drawing;
 
@@ -162,6 +160,7 @@ export default function VisualizationEngine({
           break;
         }
         case "updateConvexHullList": {
+          setPoints(clearPointsFromCanvas(points));
           convexHullUpdatedHandler(element as Point[]);
           break;
         }

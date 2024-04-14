@@ -1,18 +1,26 @@
-import { useState } from "react";
 import "./ConvexHull.scss";
-import Button from "../button/Button";
-import { Menu, MenuItem } from "@szhsin/react-menu";
 import "@szhsin/react-menu/dist/index.css";
 import "@szhsin/react-menu/dist/transitions/slide.css";
+
+import { useState } from "react";
+
+import { Menu, MenuItem } from "@szhsin/react-menu";
+
 import { Point } from "../../shared/models/geometry";
 import { comparatorPointsByXAscending, determinePointsForAlgorithm, sortList } from "../../shared/util";
-import { computeGrahamScanSteps, computeJarvisMarchExecutionSteps } from "./convex-hull-algorithm";
-import VisualizationEngine from "../visualization-engine/VisualizationEngine";
+import Button from "../button/Button";
 import { CanvasMode } from "../canvas/helpers";
+import VisualizationEngine from "../visualization-engine/VisualizationEngine";
+import {
+  computeChanExecutionSteps,
+  computeGrahamScanSteps,
+  computeJarvisMarchExecutionSteps,
+} from "./convex-hull-algorithm";
 
 enum ConvexHullAlgorithms {
   GrahamScan = "Graham Scan",
   JarvisMarch = "Jarvis March",
+  Chan = "Chan",
 }
 
 export default function ConvexHull() {
@@ -24,8 +32,10 @@ export default function ConvexHull() {
     if (selectedAlgorithm === ConvexHullAlgorithms.GrahamScan) {
       const sortedPointsForAlgorithm = sortList(pointsForAlgorithm, comparatorPointsByXAscending);
       return computeGrahamScanSteps(sortedPointsForAlgorithm);
+    } else if (selectedAlgorithm === ConvexHullAlgorithms.JarvisMarch) {
+      return computeJarvisMarchExecutionSteps(pointsForAlgorithm);
     }
-    return computeJarvisMarchExecutionSteps(pointsForAlgorithm);
+    return computeChanExecutionSteps(pointsForAlgorithm);
   };
 
   return (

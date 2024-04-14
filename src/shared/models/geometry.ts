@@ -46,6 +46,7 @@ export interface ICircle {
 export type Axis = "x" | "y";
 
 export const DEFAULT_POINT_SIZE = 5;
+export const FOCUSED_POINT_SIZE = 6;
 export const defaultDash = [5, 3];
 
 export const convertPointBetweenAlgorithmAndCanvas = (point: Point) => {
@@ -78,6 +79,17 @@ export const calculateOrientationForNormalPoints = (firstPoint: Point, targetPoi
     (endPoint.x - firstPoint.x) * (targetPoint.y - firstPoint.y);
   if (val == 0) return 0;
   return val > 0 ? 2 : 1;
+};
+
+// calculates the angle at B
+export const findAngle = (A: SimplePoint, B: SimplePoint, C: SimplePoint) => {
+  if ((A.x === B.x && A.y === B.y) || (B.x === C.x && B.y === C.y) || (A.x === C.x && A.y === C.y)) {
+    return 0; // TODO: properly handle this case
+  }
+  const AB = Math.sqrt(Math.pow(B.x - A.x, 2) + Math.pow(B.y - A.y, 2));
+  const BC = Math.sqrt(Math.pow(B.x - C.x, 2) + Math.pow(B.y - C.y, 2));
+  const AC = Math.sqrt(Math.pow(C.x - A.x, 2) + Math.pow(C.y - A.y, 2));
+  return Math.acos((BC * BC + AB * AB - AC * AC) / (2 * BC * AB));
 };
 
 // finds the derivative from x=(y-k)^2+h w.r.t. x
