@@ -160,7 +160,7 @@ export default function VisualizationEngine({
           break;
         }
         case "updateConvexHullList": {
-          setPoints(clearPointsFromCanvas(points));
+          setPoints((points) => clearPointsFromCanvas(points));
           convexHullUpdatedHandler(element as Point[]);
           break;
         }

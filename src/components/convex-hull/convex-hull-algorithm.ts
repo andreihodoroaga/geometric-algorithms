@@ -72,6 +72,7 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
   const visualizationStep = {
     explanation: stepExplanation,
     graphicDrawingsStepList: [
+      ...pointsResetToInitialColor(points),
       {
         type: "updateConvexHullList",
         element: convexHullPart.slice(),
