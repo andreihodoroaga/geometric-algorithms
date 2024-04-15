@@ -160,6 +160,7 @@ const triangulateYMonotonePolygon = (points: Point[]) => {
   if (numberOfPoints == 3) {
     step = { explanation: "Poligonul dat este deja un triunghi." };
     algorithmGraphicIndications.push(step);
+    return algorithmGraphicIndications;
   }
   const sortedPolygonPoints = sortList(points, comparatorPointsByYDescending);
   let message = "Varfurile se ordoneaza descrescător după y (dacă ordinea este egală, se folosește abscisa): ";

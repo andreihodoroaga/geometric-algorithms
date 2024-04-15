@@ -76,7 +76,7 @@ export default function VisualizationEngine({
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
   const [steps, setSteps] = useState<VisualizationStep[]>([]);
   const [selectedRunMode, setSelectedRunMode] = useState<RunMode>(RunMode.Automatic);
-  const [automaticRunInterval, setAutomaticRunInterval] = useState<number>();
+  const [automaticRunInterval, setAutomaticRunInterval] = useState<NodeJS.Timeout>();
   const [isPaused, setIsPaused] = useState(false);
   const [visualizationEnded, setVisualizationEnded] = useState(false);
   const [shouldResetCanvas, setShouldResetCanvas] = useState(false);
