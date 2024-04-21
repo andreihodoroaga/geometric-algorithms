@@ -8,13 +8,13 @@ export default function Triangulation() {
   // Returns the visualization steps or an error
   const computeVisualizationSteps = (points: Point[]) => {
     const pointsForAlgorithm = determinePointsForAlgorithm(points);
-    const visualizationSteps = computeTriangulationSteps(pointsForAlgorithm);
     if (!checkValidPolygon(points)) {
       return "Punctele nu formeaza un poligon valid!";
     }
     if (!isPolygonMonotone(pointsForAlgorithm, "y")) {
       return "Poligonul nu e y-monoton!";
     }
+    const visualizationSteps = computeTriangulationSteps(pointsForAlgorithm);
     return visualizationSteps;
   };
 

@@ -1,4 +1,4 @@
-import { VisualizationStep } from "../../shared/models/algorithm";
+import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
 import {
   Axis,
   ILine,
@@ -146,36 +146,36 @@ export const checkYMonotone = (points: Point[], leftChain: Point[], rightChain: 
   return true;
 };
 
-const triangulateYMonotonePolygon = (points: Point[]) => {
-  const algorithmGraphicIndications: VisualizationStep[] = [];
-  const numberOfPoints = points.length;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let step: any; // FIXME: remove any
+const isInteriorDiagonal = (
+  currentPoint: Point,
+  pointOnTopOfStack: Point,
+  topOfStackPoint: Point,
+  leftChain: Point[]
+) => {
+  const inLeftChain = isPointInList(currentPoint, leftChain) && isPointInList(pointOnTopOfStack, leftChain);
+  const orientation = calculateOrientationForNormalPoints(currentPoint, pointOnTopOfStack, topOfStackPoint);
 
-  const leftChain: Point[] = [];
-  const rightChain: Point[] = [];
-  // determine the left and right chains
-  checkYMonotone(points, leftChain, rightChain);
-
-  if (numberOfPoints == 3) {
-    step = { explanation: "Poligonul dat este deja un triunghi." };
-    algorithmGraphicIndications.push(step);
-    return algorithmGraphicIndications;
+  if (inLeftChain) {
+    return orientation == 1;
+  } else {
+    return orientation == 2;
   }
-  const sortedPolygonPoints = sortList(points, comparatorPointsByYDescending);
+};
+
+const sortStepExplanation = (sortedPoints: Point[]) => {
   let message = "Varfurile se ordoneaza descrescător după y (dacă ordinea este egală, se folosește abscisa): ";
-  for (let i = 0; i < sortedPolygonPoints.length; i++) {
-    if (i > 0) message = message + ", ";
-    message = message + sortedPolygonPoints[i].label;
-  }
-  step = { explanation: message };
-  algorithmGraphicIndications.push(step);
 
-  let pointsStack = [sortedPolygonPoints[0], sortedPolygonPoints[1]];
-  let pointsLettersStack = [pointsStack[0].label, pointsStack[1].label];
-  step = {
+  for (let i = 0; i < sortedPoints.length; i++) {
+    if (i > 0) message = message + ", ";
+    message = message + sortedPoints[i].label;
+  }
+
+  return message;
+};
+
+const initializeStackStep = (pointsStack: Point[]) => {
+  return {
     explanation: "Se initializeaza stiva cu primele 2 varfuri. ",
-    stackStatus: pointsLettersStack.slice(),
     graphicDrawingsStepList: [
       {
         type: "point",
@@ -191,273 +191,177 @@ const triangulateYMonotonePolygon = (points: Point[]) => {
       },
     ],
   };
-  algorithmGraphicIndications.push(step);
+};
 
-  for (let i = 2; i < numberOfPoints - 1; i++) {
-    const currentPoint = sortedPolygonPoints[i];
+const pointAndTopOfStackInSameChainStep = (currentPoint: Point, pointsStack: Point[]) => {
+  return {
+    explanation: `Punctul curent, ${currentPoint.label}, si punctul din varful stivei, ${
+      pointsStack[pointsStack.length - 1].label
+    }, sunt in acelasi lant. `,
+    graphicDrawingsStepList: [
+      {
+        type: "point",
+        element: currentPoint,
+        color: ORANGE_COLOR,
+        size: 6,
+      },
+      {
+        type: "point",
+        element: pointsStack[pointsStack.length - 1],
+        color: ORANGE_COLOR,
+        size: 6,
+      },
+    ],
+  };
+};
 
-    const inSameList =
-      (isPointInList(currentPoint, leftChain) && isPointInList(pointsStack[pointsStack.length - 1], leftChain)) ||
-      (isPointInList(currentPoint, rightChain) && isPointInList(pointsStack[pointsStack.length - 1], rightChain));
-    if (inSameList) {
-      step = {
-        explanation:
-          "Punctul curent, " +
-          currentPoint.label +
-          ", si punctul din varful stivei, " +
-          pointsStack[pointsStack.length - 1].label +
-          ", sunt in acelasi lant. ",
-        graphicDrawingsStepList: [
-          {
-            type: "point",
-            element: currentPoint,
-            color: ORANGE_COLOR,
-            size: 6,
-          },
-          {
-            type: "point",
-            element: pointsStack[pointsStack.length - 1],
-            color: ORANGE_COLOR,
-            size: 6,
-          },
-        ],
-      };
-      algorithmGraphicIndications.push(step);
+const extractTopOfStackStep = (lastPointFromStack: Point) => {
+  return {
+    explanation: "Se extrage un varf din stiva. ",
+    graphicDrawingsStepList: [
+      {
+        type: "point",
+        element: lastPointFromStack,
+        color: RED_COLOR,
+        size: 6,
+      },
+    ],
+  };
+};
 
-      let lastPointFromStack = pointsStack[pointsStack.length - 1];
-      pointsStack.pop();
-      pointsLettersStack.pop();
-      step = {
-        explanation: "Se extrage un varf din stiva. ",
-        stackStatus: pointsLettersStack.slice(),
-        graphicDrawingsStepList: [
-          {
-            type: "point",
-            element: lastPointFromStack,
-            color: RED_COLOR,
-            size: 6,
-          },
-        ],
-      };
-      algorithmGraphicIndications.push(step);
+const interiorDiagonalStep = (currentPoint: Point, lastPointFromStack: Point) => {
+  return {
+    explanation: `Se extrage varful ${lastPointFromStack.label} din stiva pentru ca formeaza cu ${currentPoint.label} diagonala interioara poligonului. `,
+    graphicDrawingsStepList: [
+      {
+        type: "addDiagonal",
+        element: [currentPoint, lastPointFromStack],
+      },
+      {
+        type: "line",
+        element: [currentPoint, lastPointFromStack],
+        color: LIGHT_GREEN_COLOR,
+      },
+      {
+        type: "point",
+        element: lastPointFromStack,
+        color: RED_COLOR,
+        size: 6,
+      },
+      {
+        type: "point",
+        element: currentPoint,
+        color: ORANGE_COLOR,
+        size: 6,
+      },
+    ],
+  };
+};
 
-      while (
-        pointsStack.length > 0 &&
-        isDiagonalInterior(currentPoint, lastPointFromStack, pointsStack[pointsStack.length - 1], leftChain)
-      ) {
-        lastPointFromStack = pointsStack[pointsStack.length - 1];
-        pointsStack.pop();
-        pointsLettersStack.pop();
-        step = {
-          explanation:
-            "Se extrage varful " +
-            lastPointFromStack.label +
-            " din stiva pentru ca formeaza cu " +
-            currentPoint.label +
-            " diagonala interioara poligonului. ",
-          stackStatus: pointsLettersStack.slice(),
-          graphicDrawingsStepList: [
-            {
-              type: "addDiagonal",
-              element: [currentPoint, lastPointFromStack],
-            },
-            {
-              type: "line",
-              element: [currentPoint, lastPointFromStack],
-              color: LIGHT_GREEN_COLOR,
-            },
-            {
-              type: "point",
-              element: lastPointFromStack,
-              color: RED_COLOR,
-              size: 6,
-            },
-            {
-              type: "point",
-              element: currentPoint,
-              color: ORANGE_COLOR,
-              size: 6,
-            },
-          ],
-        };
-        algorithmGraphicIndications.push(step);
-      }
+const insertPointBackInStackStep = (currentPoint: Point, stackPoint: Point, stackPointPosition: "first" | "last") => {
+  const stackPointPositionMessage = stackPointPosition === "last" ? "ultimul" : "primul";
 
-      pointsStack.push(lastPointFromStack);
-      pointsStack.push(currentPoint);
-      pointsLettersStack.push(lastPointFromStack.label);
-      pointsLettersStack.push(currentPoint.label);
-      step = {
-        explanation:
-          "Se insereaza inapoi in stiva ultimul varf extras, " +
-          lastPointFromStack.label +
-          " si varful curent " +
-          currentPoint.label +
-          ". ",
-        stackStatus: pointsLettersStack.slice(),
-        graphicDrawingsStepList: [
-          {
-            type: "point",
-            element: lastPointFromStack,
-            color: LIGHT_GREEN_COLOR,
-            size: 6,
-          },
-          {
-            type: "point",
-            element: currentPoint,
-            color: LIGHT_GREEN_COLOR,
-            size: 6,
-          },
-        ],
-      };
-      algorithmGraphicIndications.push(step);
-    } else {
-      step = {
-        explanation:
-          "Punctul curent, " +
-          currentPoint.label +
-          ", si punctul din varful stivei, " +
-          pointsStack[pointsStack.length - 1].label +
-          ", sunt in lanturi diferite. ",
-        graphicDrawingsStepList: [
-          {
-            type: "addDiagonal",
-            element: [currentPoint, pointsStack[pointsStack.length - 1]],
-          },
-          {
-            type: "line",
-            element: [currentPoint, pointsStack[pointsStack.length - 1]],
-            color: ORANGE_COLOR,
-            style: "dash",
-          },
-          {
-            type: "point",
-            element: currentPoint,
-            color: ORANGE_COLOR,
-            size: 6,
-          },
-          {
-            type: "point",
-            element: pointsStack[pointsStack.length - 1],
-            color: LIGHT_GREEN_COLOR,
-            size: 6,
-          },
-        ],
-      };
-      algorithmGraphicIndications.push(step);
+  return {
+    explanation: `Se insereaza inapoi in stiva ${stackPointPositionMessage} varf extras, ${stackPoint.label} si varful curent ${currentPoint.label}. `, //TODO: remove space
+    graphicDrawingsStepList: [
+      {
+        type: "point",
+        element: stackPoint,
+        color: LIGHT_GREEN_COLOR,
+        size: 6,
+      },
+      {
+        type: "point",
+        element: currentPoint,
+        color: LIGHT_GREEN_COLOR,
+        size: 6,
+      },
+    ],
+  };
+};
 
-      const pointOnTopOfStack = pointsStack[pointsStack.length - 1];
-      for (let j = pointsStack.length - 1; j > 0; j--) {
-        pointsLettersStack.pop();
-        step = {
-          explanation:
-            "Se extrage din stiva varful " +
-            pointsStack[j].label +
-            " si se adauga noua diagonala: " +
-            currentPoint.label +
-            pointsStack[j].label +
-            ". ",
-          stackStatus: pointsLettersStack.slice(),
-          graphicDrawingsStepList: [
-            {
-              type: "addDiagonal",
-              element: [currentPoint, pointsStack[j]],
-            },
-            {
-              type: "line",
-              element: [currentPoint, pointsStack[j]],
-              color: GREEN_COLOR,
-            },
-            {
-              type: "point",
-              element: pointsStack[j],
-              color: RED_COLOR,
-              size: 6,
-            },
-            {
-              type: "point",
-              element: currentPoint,
-              color: ORANGE_COLOR,
-              size: 6,
-            },
-          ],
-        };
-        algorithmGraphicIndications.push(step);
-      }
+const pointsInDifferentChainsStep = (currentPoint: Point, pointsStack: Point[]) => {
+  return {
+    explanation: `Punctul curent, ${currentPoint.label}, si punctul din varful stivei, ${
+      pointsStack[pointsStack.length - 1].label
+    }, sunt in lanturi diferite. `,
+    graphicDrawingsStepList: [
+      {
+        type: "addDiagonal",
+        element: [currentPoint, pointsStack[pointsStack.length - 1]],
+      },
+      {
+        type: "line",
+        element: [currentPoint, pointsStack[pointsStack.length - 1]],
+        color: ORANGE_COLOR,
+        style: "dash",
+      },
+      {
+        type: "point",
+        element: currentPoint,
+        color: ORANGE_COLOR,
+        size: 6,
+      },
+      {
+        type: "point",
+        element: pointsStack[pointsStack.length - 1],
+        color: LIGHT_GREEN_COLOR,
+        size: 6,
+      },
+    ],
+  };
+};
 
-      const firstPointInStack = pointsStack[0];
-      pointsStack.pop();
-      pointsLettersStack.pop();
-      step = {
-        explanation:
-          "Se extrage din stiva varful " + firstPointInStack.label + ", dar fiind ultimul, nu se adauga diagonala. ",
-        stackStatus: pointsLettersStack.slice(),
-        graphicDrawingsStepList: [
-          {
-            type: "point",
-            element: firstPointInStack,
-            color: RED_COLOR,
-            size: 6,
-          },
-        ],
-      };
-      algorithmGraphicIndications.push(step);
+const addDiagonalDifferentChainsStep = (currentPoint: Point, otherPoint: Point) => {
+  return {
+    explanation: `Se extrage din stiva varful ${otherPoint.label} si se adauga noua diagonala: ${currentPoint.label}${otherPoint.label}. `,
+    graphicDrawingsStepList: [
+      {
+        type: "addDiagonal",
+        element: [currentPoint, otherPoint],
+      },
+      {
+        type: "line",
+        element: [currentPoint, otherPoint],
+        color: GREEN_COLOR,
+      },
+      {
+        type: "point",
+        element: otherPoint,
+        color: RED_COLOR,
+        size: 6,
+      },
+      {
+        type: "point",
+        element: currentPoint,
+        color: ORANGE_COLOR,
+        size: 6,
+      },
+    ],
+  };
+};
 
-      pointsStack = [pointOnTopOfStack, currentPoint];
-      pointsLettersStack = [pointsStack[0].label, pointsStack[1].label];
-      step = {
-        explanation:
-          "Se insereaza inapoi in stiva primul varf extras, " +
-          pointOnTopOfStack.label +
-          " si varful curent " +
-          currentPoint.label +
-          ". ",
-        stackStatus: pointsLettersStack.slice(),
-        graphicDrawingsStepList: [
-          {
-            type: "point",
-            element: pointOnTopOfStack,
-            color: LIGHT_GREEN_COLOR,
-            size: 6,
-          },
-          {
-            type: "point",
-            element: currentPoint,
-            color: LIGHT_GREEN_COLOR,
-            size: 6,
-          },
-        ],
-      };
-      algorithmGraphicIndications.push(step);
-    }
+const firstPointInStackStep = (firstPointInStack: Point) => {
+  return {
+    explanation: `Se extrage din stiva varful ${firstPointInStack.label}, dar fiind ultimul, nu se adauga diagonala. `,
+    graphicDrawingsStepList: [
+      {
+        type: "point",
+        element: firstPointInStack,
+        color: RED_COLOR,
+        size: 6,
+      },
+    ],
+  };
+};
 
-    step = {
-      graphicDrawingsStepList: [
-        {
-          type: "redrawCanvasElements",
-        },
-      ],
-    };
-    if (i < numberOfPoints - 2) {
-      for (let i = 0; i < pointsStack.length; i++) {
-        step.graphicDrawingsStepList.push({
-          type: "point",
-          element: pointsStack[i],
-          color: LIGHT_GREEN_COLOR,
-          size: 6,
-        });
-      }
-    }
-    algorithmGraphicIndications.push(step);
-  }
+const finalSteps = (pointsStack: Point[], sortedPolygonPoints: Point[]) => {
+  const steps: VisualizationStep[] = [];
 
   const lastPointInSortedList = sortedPolygonPoints[sortedPolygonPoints.length - 1];
   for (let i = 1; i < pointsStack.length - 1; i++) {
-    step = {
-      message:
-        "Se adauga diagonale de la ultimul varf din lista, " +
-        lastPointInSortedList.label +
-        ", la varful stivei (exceptand primul ̧si ultimul). ",
+    const step = {
+      message: `Se adauga diagonale de la ultimul varf din lista, ${lastPointInSortedList.label}, la varful stivei (exceptand primul ̧si ultimul). `,
       graphicDrawingsStepList: [
         {
           type: "addDiagonal",
@@ -468,29 +372,100 @@ const triangulateYMonotonePolygon = (points: Point[]) => {
           element: [lastPointInSortedList, pointsStack[i]],
           color: BLUE_COLOR,
         },
-      ],
+      ] as Drawing[],
     };
     if (i == pointsStack.length - 2) {
       step.graphicDrawingsStepList.push({ type: "redrawCanvasElements" });
     }
-    algorithmGraphicIndications.push(step);
+
+    steps.push(step);
   }
 
-  return algorithmGraphicIndications;
+  return steps;
 };
 
-const isDiagonalInterior = (
-  currentPoint: Point,
-  pointOnTopOfStack: Point,
-  topOfStackPoint: Point,
-  leftChain: Point[]
-) => {
-  const inLeftChain = isPointInList(currentPoint, leftChain) && isPointInList(pointOnTopOfStack, leftChain);
-  const orientation = calculateOrientationForNormalPoints(currentPoint, pointOnTopOfStack, topOfStackPoint);
-
-  if (inLeftChain) {
-    return orientation == 1;
-  } else {
-    return orientation == 2;
+const makeStackPointsLightGreenStep = (pointsStack: Point[], oneOfLastTwoPoints: boolean) => {
+  const step: VisualizationStep = {
+    graphicDrawingsStepList: [
+      {
+        type: "redrawCanvasElements",
+      },
+    ],
+  };
+  if (!oneOfLastTwoPoints) {
+    for (let j = 0; j < pointsStack.length; j++) {
+      step.graphicDrawingsStepList!.push({
+        type: "point",
+        element: pointsStack[j],
+        color: LIGHT_GREEN_COLOR,
+        size: 6,
+      });
+    }
   }
+
+  return step;
+};
+
+const triangulateYMonotonePolygon = (points: Point[]) => {
+  const algorithmGraphicIndications: VisualizationStep[] = [];
+
+  const leftChain: Point[] = [];
+  const rightChain: Point[] = [];
+  // determine the left and right chains
+  checkYMonotone(points, leftChain, rightChain);
+
+  if (points.length == 3) {
+    algorithmGraphicIndications.push({ explanation: "Poligonul dat este deja un triunghi." });
+    return algorithmGraphicIndications;
+  }
+
+  const sortedPolygonPoints = sortList(points, comparatorPointsByYDescending);
+  algorithmGraphicIndications.push({ explanation: sortStepExplanation(sortedPolygonPoints) });
+
+  let pointsStack = [sortedPolygonPoints[0], sortedPolygonPoints[1]];
+  algorithmGraphicIndications.push(initializeStackStep(pointsStack));
+
+  for (let i = 2; i < points.length - 1; i++) {
+    const currentPoint = sortedPolygonPoints[i];
+
+    const inSameList =
+      (isPointInList(currentPoint, leftChain) && isPointInList(pointsStack[pointsStack.length - 1], leftChain)) ||
+      (isPointInList(currentPoint, rightChain) && isPointInList(pointsStack[pointsStack.length - 1], rightChain));
+    if (inSameList) {
+      algorithmGraphicIndications.push(pointAndTopOfStackInSameChainStep(currentPoint, pointsStack));
+
+      let lastPointFromStack = pointsStack.pop()!;
+      algorithmGraphicIndications.push(extractTopOfStackStep(lastPointFromStack));
+
+      while (
+        pointsStack.length > 0 &&
+        isInteriorDiagonal(currentPoint, lastPointFromStack, pointsStack[pointsStack.length - 1], leftChain)
+      ) {
+        lastPointFromStack = pointsStack.pop()!;
+        algorithmGraphicIndications.push(interiorDiagonalStep(currentPoint, lastPointFromStack));
+      }
+
+      pointsStack.push(lastPointFromStack, currentPoint);
+      algorithmGraphicIndications.push(insertPointBackInStackStep(currentPoint, lastPointFromStack, "last"));
+    } else {
+      algorithmGraphicIndications.push(pointsInDifferentChainsStep(currentPoint, pointsStack));
+
+      const pointOnTopOfStack = pointsStack[pointsStack.length - 1];
+      for (let j = pointsStack.length - 1; j > 0; j--) {
+        algorithmGraphicIndications.push(addDiagonalDifferentChainsStep(currentPoint, pointsStack[j]));
+      }
+
+      pointsStack.pop();
+      algorithmGraphicIndications.push(firstPointInStackStep(pointsStack[0]));
+
+      pointsStack = [pointOnTopOfStack, currentPoint];
+      algorithmGraphicIndications.push(insertPointBackInStackStep(currentPoint, pointOnTopOfStack, "first"));
+    }
+
+    algorithmGraphicIndications.push(makeStackPointsLightGreenStep(pointsStack, i >= points.length - 2));
+  }
+
+  algorithmGraphicIndications.push(...finalSteps(pointsStack, sortedPolygonPoints));
+
+  return algorithmGraphicIndications;
 };
