@@ -10,7 +10,15 @@ import {
   Point,
   SimplePoint,
 } from "../../shared/models/geometry";
-import { getLinesFromPoints, GREEN_COLOR, GREY_COLOR, ORANGE_COLOR, RED_COLOR, shuffleArray } from "../../shared/util";
+import {
+  getLinesFromPoints,
+  GREEN_COLOR,
+  GREY_COLOR,
+  ORANGE_COLOR,
+  pointsResetToInitialColor,
+  RED_COLOR,
+  shuffleArray,
+} from "../../shared/util";
 
 type ConvexHullPart = "lower" | "upper";
 
@@ -489,14 +497,6 @@ const visualizationStepMaxAnglePoint = (point: Point, startPoint: Point, endPoin
       },
     ],
   };
-};
-
-const pointsResetToInitialColor = (points: Point[]): Drawing[] => {
-  return points.map((p) => ({
-    type: "point",
-    element: p,
-    color: p.color,
-  }));
 };
 
 const htmlLabelWithColor = (label: string, color: string) => {

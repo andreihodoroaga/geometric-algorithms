@@ -1,3 +1,4 @@
+import { Drawing } from "./models/algorithm";
 import { ILine, Point, SimplePoint, convertPointBetweenAlgorithmAndCanvas } from "./models/geometry";
 
 export const POINT_RADIUS = 5;
@@ -153,4 +154,12 @@ export const shuffleArray = <T>(arr: T[]) => {
   }
 
   return shuffledArr;
+};
+
+export const pointsResetToInitialColor = (points: Point[]): Drawing[] => {
+  return points.map((p) => ({
+    type: "point",
+    element: p,
+    color: p.color,
+  }));
 };
