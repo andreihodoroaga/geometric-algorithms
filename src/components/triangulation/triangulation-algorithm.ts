@@ -99,7 +99,7 @@ const comparePointsWithRespectToAxis = (currPoint: Point, nextPoint: Point, prev
 // a polygon is monotone with respect to an axis (say the x-axis)
 // if it has only one vertex whose x-coordinate is smaller than both of its neighbours
 // https://cs.stackexchange.com/questions/1577/how-do-i-test-if-a-polygon-is-monotone-with-respect-to-a-line
-// the points are assumed to be in trigonometric order
+// the points are assumed to be in trigonometric order TODO: why?
 export const isPolygonMonotone = (points: Point[], axis: Axis) => {
   const numberOfPoints = points.length;
   let localMins = 0;
@@ -116,45 +116,49 @@ export const isPolygonMonotone = (points: Point[], axis: Axis) => {
   return localMins == 1;
 };
 
-// the legacy method for checking if a polygon is y-monotone
-export const checkYMonotone = (points: Point[], leftChain: Point[], rightChain: Point[]) => {
-  let indexMinPoint = 0;
+// assumes points are in either trigonometric or clockwise order
+export const leftAndRightChains = (points: Point[]) => {
+  // the first chain will be the left one if the points are in trigonometric order
+  const firstChain: Point[] = [];
+  const secondChain: Point[] = [];
+
+  const topmostPoint = points.reduce((prev, current) => (prev && prev.y > current.y ? prev : current));
+  const lowestPoint = points.reduce((prev, current) => (prev && prev.y < current.y ? prev : current));
+
+  const topmostPointIdx = points.findIndex((p) => arePointsEqual(p, topmostPoint))!;
+  let hitBottom = false;
+  firstChain.push(topmostPoint);
   for (let i = 1; i < points.length; i++) {
-    if (points[i].y < points[indexMinPoint].y) {
-      indexMinPoint = i;
-    }
-  }
-  rightChain.push(points[indexMinPoint]);
+    const currentIndex = (i + topmostPointIdx) % points.length;
 
-  let ascending = true;
-  for (let i = 1; i < points.length; i++) {
-    const currentIndex = (i + indexMinPoint) % points.length;
-    const previous = currentIndex == 0 ? points.length - 1 : currentIndex - 1;
-    //daca parcurgerea este in jos/scad, dar punctul curent are coordonata mai mare decat precedentul
-    // returnez False deoarece am intalnit deja punctul maxim cand am schimbat directia (nu poate exista altul)
-    if (points[previous].y < points[currentIndex].y && ascending == false) return false;
-
-    // daca urc si intalnesc un punct care are coordonata y < precedentul, inseamna ca schimb directia (parcurgere in jos)
-    // nu returnez False deoarece punctele sunt parcurse trigonometric deci poate am dat de punctul maxim
-    if (points[previous].y > points[currentIndex].y && ascending == true) ascending = false;
-
-    if (ascending) {
-      rightChain.push(points[currentIndex]);
+    if (!hitBottom) {
+      firstChain.push(points[currentIndex]);
     } else {
-      leftChain.push(points[currentIndex]);
+      secondChain.push(points[currentIndex]);
+    }
+
+    if (arePointsEqual(points[currentIndex], lowestPoint) && !hitBottom) {
+      hitBottom = true;
     }
   }
-  return true;
+
+  // the firstChain has at least two values (the topmost and lowest points), while the secondChain can have none
+  // if the first chain is the right one (when the points are in clockwise order), swap them
+  if (secondChain.length && firstChain[1].x > secondChain[0].x) {
+    return [secondChain, firstChain];
+  } else {
+    return [firstChain, secondChain];
+  }
 };
 
 const isInteriorDiagonal = (
   currentPoint: Point,
-  pointOnTopOfStack: Point,
+  lastPointFromStack: Point,
   topOfStackPoint: Point,
   leftChain: Point[]
 ) => {
-  const inLeftChain = isPointInList(currentPoint, leftChain) && isPointInList(pointOnTopOfStack, leftChain);
-  const orientation = calculateOrientationForNormalPoints(currentPoint, pointOnTopOfStack, topOfStackPoint);
+  const inLeftChain = isPointInList(currentPoint, leftChain) && isPointInList(lastPointFromStack, leftChain);
+  const orientation = calculateOrientationForNormalPoints(currentPoint, lastPointFromStack, topOfStackPoint);
 
   if (inLeftChain) {
     return orientation == 1;
@@ -185,13 +189,13 @@ const initializeStackStep = (pointsStack: Point[]) => {
       {
         type: "point",
         element: pointsStack[0],
-        color: GREEN_COLOR,
+        color: LIGHT_GREEN_COLOR,
         size: 6,
       },
       {
         type: "point",
         element: pointsStack[1],
-        color: GREEN_COLOR,
+        color: LIGHT_GREEN_COLOR,
         size: 6,
       },
     ],
@@ -423,15 +427,14 @@ const makeStackPointsLightGreenStep = (points: Point[], pointsStack: Point[], on
 const triangulateYMonotonePolygon = (points: Point[]) => {
   const algorithmGraphicIndications: VisualizationStep[] = [];
 
-  const leftChain: Point[] = [];
-  const rightChain: Point[] = [];
-  // determine the left and right chains
-  checkYMonotone(points, leftChain, rightChain);
-
   if (points.length == 3) {
     algorithmGraphicIndications.push({ explanation: "Poligonul dat este deja un triunghi." });
     return algorithmGraphicIndications;
   }
+
+  let leftChain: Point[] = [];
+  let rightChain: Point[] = [];
+  [leftChain, rightChain] = leftAndRightChains(points);
 
   const sortedPolygonPoints = sortList(points, comparatorPointsByYDescending);
   algorithmGraphicIndications.push({ explanation: sortStepExplanation(sortedPolygonPoints) });
