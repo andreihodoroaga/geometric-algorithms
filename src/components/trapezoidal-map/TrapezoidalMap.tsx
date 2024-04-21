@@ -13,7 +13,6 @@ export default function TrapezoidalMap() {
       computeVisualizationSteps={computeVisualizationSteps}
       explanationsTitle="Harta trapezoidala"
       mode={CanvasMode.segments}
-    >
-    </VisualizationEngine>
+    ></VisualizationEngine>
   );
 }

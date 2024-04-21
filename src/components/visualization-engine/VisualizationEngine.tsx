@@ -49,8 +49,8 @@ const clearPointsFromCanvas = (points: Point[]) => {
 interface VisualizationEngineProps {
   computeVisualizationSteps: (points: Point[], canvasDimensions: CanvasDimensions) => VisualizationStep[] | string;
   explanationsTitle: string;
-  children: React.ReactNode;
   mode: CanvasMode;
+  children?: React.ReactNode;
   showSpeedControl?: boolean;
 }
 
@@ -58,8 +58,8 @@ interface VisualizationEngineProps {
 export default function VisualizationEngine({
   computeVisualizationSteps,
   explanationsTitle,
-  children,
   mode,
+  children,
   showSpeedControl,
 }: VisualizationEngineProps) {
   const minAlgorithmSpeedInMs = 25;

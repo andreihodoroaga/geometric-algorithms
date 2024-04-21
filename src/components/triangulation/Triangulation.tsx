@@ -23,7 +23,6 @@ export default function Triangulation() {
       computeVisualizationSteps={computeVisualizationSteps}
       explanationsTitle="Triangulare"
       mode={CanvasMode.polygon}
-    >
-    </VisualizationEngine>
+    ></VisualizationEngine>
   );
 }
