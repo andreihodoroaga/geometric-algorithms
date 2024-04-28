@@ -80,10 +80,21 @@ nav {
   @media screen and (max-width: $breakpoint-tablet) {
     justify-content: space-between;
 
+    nav {
+      position: relative;
+    }
+
     ul {
-      margin-top: 0.5rem;
       display: none;
       flex-direction: column;
+      z-index: 2;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      box-shadow: rgba(6, 24, 44, 0.4) 0px 0px 0px 2px, rgba(6, 24, 44, 0.65) 0px 4px 6px -1px,
+        rgba(255, 255, 255, 0.08) 0px 1px 0px inset;
 
       &.hidden {
         display: none;
