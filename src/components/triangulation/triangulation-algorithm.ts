@@ -1,4 +1,4 @@
-import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
+import { VisualizationStep } from "../../shared/models/algorithm";
 import {
   Axis,
   ILine,
@@ -8,7 +8,6 @@ import {
   convertPointBetweenAlgorithmAndCanvas,
 } from "../../shared/models/geometry";
 import {
-  BLUE_COLOR,
   GREEN_COLOR,
   GREY_COLOR,
   LIGHT_GREEN_COLOR,
@@ -377,35 +376,6 @@ const firstPointInStackStep = (pointsStack: Point[], extractedPoint: Point) => {
   };
 };
 
-const finalSteps = (pointsStack: Point[], sortedPolygonPoints: Point[]) => {
-  const steps: VisualizationStep[] = [];
-
-  const lastPointInSortedList = sortedPolygonPoints[sortedPolygonPoints.length - 1];
-  for (let i = 1; i < pointsStack.length - 1; i++) {
-    const step = {
-      message: `Se adauga diagonale de la ultimul varf din lista, ${lastPointInSortedList.label}, la varful stivei (exceptand primul ̧si ultimul). `,
-      graphicDrawingsStepList: [
-        {
-          type: "addDiagonal",
-          element: [lastPointInSortedList, pointsStack[i - 1]], //FIXME: this was j before, changed randomly to i - 1
-        },
-        {
-          type: "line",
-          element: [lastPointInSortedList, pointsStack[i]],
-          color: BLUE_COLOR,
-        },
-      ] as Drawing[],
-    };
-    if (i == pointsStack.length - 2) {
-      step.graphicDrawingsStepList.push({ type: "redrawCanvasElements" });
-    }
-
-    steps.push(step);
-  }
-
-  return steps;
-};
-
 const makeStackPointsLightGreenStep = (points: Point[], pointsStack: Point[], oneOfLastTwoPoints: boolean) => {
   const step: VisualizationStep = {
     graphicDrawingsStepList: [...pointsResetToInitialColor(points)],
@@ -486,8 +456,6 @@ const triangulateYMonotonePolygon = (points: Point[]) => {
 
     algorithmGraphicIndications.push(makeStackPointsLightGreenStep(points, pointsStack, i >= points.length - 2));
   }
-
-  algorithmGraphicIndications.push(...finalSteps(pointsStack, sortedPolygonPoints));
 
   return algorithmGraphicIndications;
 };
