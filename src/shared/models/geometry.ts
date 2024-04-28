@@ -64,7 +64,7 @@ export const convertSimplePointBetweenAlgorithmAndCanvas = (point: SimplePoint) 
 };
 
 export const arePointsEqual = (p1: Point, p2: Point) => {
-  return p1.x === p2.x && p1.y === p2.y;
+  return p1.label === p2.label && p1.x === p2.x && p1.y === p2.y;
 };
 
 export const isPointInsideTheCanvas = (point: SimplePoint, canvasDimensions: CanvasDimensions) => {

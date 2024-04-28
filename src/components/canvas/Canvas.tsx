@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
 import { ICircle, ILine, IParabola, Point } from "../../shared/models/geometry";
-import { GREY_COLOR, distanceBetweenPoints, getLinesFromPoints, getNextPointLetter } from "../../shared/util";
+import {
+  GREY_COLOR,
+  distanceBetweenPoints,
+  getLinesFromPoints,
+  getNextPointLetter,
+  getPointClickedOn,
+  getPointFromSimplePoint,
+} from "../../shared/util";
 import "./Canvas.scss";
 import PointComponent from "./Point";
 import OverlayText from "./overlay-text/OverlayText";
@@ -68,6 +75,8 @@ export default function Canvas({
   const [closedPolygon, setClosedPolygon] = useState(false);
   const [axesLines, setAxesLines] = useState<ILine[]>([]);
   const [axesPoints, setAxesPoints] = useState<Point[]>([]);
+  const [dragPoint, setDragPoint] = useState<Point | undefined>(undefined);
+  const [previewLine, setPreviewLine] = useState<ILine | undefined>(undefined);
 
   useEffect(() => {
     if (shouldReset && onReset) {
@@ -78,6 +87,8 @@ export default function Canvas({
       setParabolas?.([]);
       setClosedPolygon(false);
       onReset();
+      setPreviewLine(undefined);
+      setDragPoint(undefined);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldReset]);
@@ -130,6 +141,7 @@ export default function Canvas({
     setShowOverlayText(false);
     setPoints(points);
     setLines(getLinesFromPoints(points, GREY_COLOR, true));
+    setClosedPolygon(true);
   };
 
   const generateRandomSegments = () => {
@@ -200,6 +212,63 @@ export default function Canvas({
     return points.map((point) => getCenteredPoint(point, canvasDimensions));
   };
 
+  const handleMouseDown = (e: KonvaEventObject<MouseEvent>) => {
+    if (disabled) {
+      return;
+    }
+
+    if (mode !== CanvasMode.polygon || !closedPolygon) {
+      handleCanvasClick(e);
+    }
+
+    setDragPoint(getPointClickedOn(points, e.target.getStage()?.getPointerPosition()));
+    setPreviewLine(undefined);
+  };
+
+  const handleMouseMove = (e: KonvaEventObject<MouseEvent>) => {
+    if (disabled) {
+      return;
+    }
+
+    if (
+      (mode === CanvasMode.polygon && !closedPolygon && points.length) ||
+      (mode === CanvasMode.segments && points.length % 2)
+    ) {
+      setPreviewLine({
+        startPoint: points[points.length - 1],
+        endPoint: getPointFromSimplePoint(e.target.getStage()!.getPointerPosition()!),
+        color: GREY_COLOR,
+      });
+    }
+
+    if (dragPoint) {
+      movePoint(dragPoint, e.target.getStage()!.getPointerPosition()!);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setDragPoint(undefined);
+  };
+
+  const movePoint = (point: Point, newPosition: Vector2d) => {
+    const newPoint = {
+      ...point,
+      ...newPosition,
+    };
+    setPoints((points) => points.map((p) => (p.label === point.label ? newPoint : p)));
+    setLines((lines) =>
+      lines.map((line) => {
+        if (line.startPoint.label === point.label) {
+          return { ...line, startPoint: newPoint };
+        }
+        if (line.endPoint.label === point.label) {
+          return { ...line, endPoint: newPoint };
+        }
+        return line;
+      })
+    );
+  };
+
   const getPointsToShow = () => {
     const pointsToShow = originInCenter ? getCenteredPoints(points) : points;
     return pointsToShow.map((point) => <PointComponent point={point} key={uniqueId()} />);
@@ -213,9 +282,13 @@ export default function Canvas({
     }));
   };
 
+  const getAxisPointsToShow = () => axesPoints.map((point) => <PointComponent point={point} key={uniqueId()} />);
+
   const getLinesToShow = () => {
     const linesToShow = originInCenter ? getCenteredLines(lines) : lines;
-    return linesToShow.map((line) => <LineComponent line={line} key={uniqueId()} />);
+    return [...linesToShow, ...axesLines, previewLine].map(
+      (line) => line && <LineComponent line={line} key={uniqueId()} />
+    );
   };
 
   const generateMethod =
@@ -227,14 +300,15 @@ export default function Canvas({
 
   return (
     <div className="canvas-component">
-      <Stage width={canvasDimensions.width} height={canvasDimensions.height} onClick={(e) => handleCanvasClick(e)}>
+      <Stage
+        width={canvasDimensions.width}
+        height={canvasDimensions.height}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}
+      >
         <Layer>
-          {axesPoints.map((point) => (
-            <PointComponent point={point} key={uniqueId()} />
-          ))}
-          {axesLines.map((line) => (
-            <LineComponent line={line} key={uniqueId()} />
-          ))}
+          {getAxisPointsToShow()}
           {getPointsToShow()}
           {getLinesToShow()}
           {parabolas?.map((parabola) => (

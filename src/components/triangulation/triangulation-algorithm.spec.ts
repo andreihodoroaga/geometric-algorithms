@@ -1,4 +1,5 @@
 import { Point, SimplePoint } from "../../shared/models/geometry";
+import { getPointFromSimplePoint } from "../../shared/util";
 import { computeTriangulationSteps, leftAndRightChains } from "./triangulation-algorithm";
 
 const generateMockPoints = (size: number) => {
@@ -19,11 +20,7 @@ const generateMockPoints = (size: number) => {
 };
 
 const mockPointsFromSimplePoints = (simplePoints: SimplePoint[]): Point[] => {
-  return simplePoints.map((p) => ({
-    ...p,
-    color: "",
-    label: "",
-  }));
+  return simplePoints.map((p) => getPointFromSimplePoint(p));
 };
 
 describe("Triangulation algorithm", () => {

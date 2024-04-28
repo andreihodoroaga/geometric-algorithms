@@ -1,5 +1,12 @@
+import { Vector2d } from "konva/lib/types";
 import { Drawing } from "./models/algorithm";
-import { ILine, Point, SimplePoint, convertPointBetweenAlgorithmAndCanvas } from "./models/geometry";
+import {
+  DEFAULT_POINT_SIZE,
+  ILine,
+  Point,
+  SimplePoint,
+  convertPointBetweenAlgorithmAndCanvas,
+} from "./models/geometry";
 
 export const POINT_RADIUS = 5;
 export const POINT_COORDINATE_MAX_VALUE = 50;
@@ -163,3 +170,18 @@ export const pointsResetToInitialColor = (points: Point[]): Drawing[] => {
     color: p.color,
   }));
 };
+
+export const getPointClickedOn = (points: Point[], clickLocation: Vector2d | null | undefined) => {
+  if (!clickLocation) {
+    return undefined;
+  }
+  return points.find(
+    (p) => Math.abs(p.x - clickLocation.x) < DEFAULT_POINT_SIZE && Math.abs(p.y - clickLocation.y) < DEFAULT_POINT_SIZE
+  );
+};
+
+export const getPointFromSimplePoint = (simplePoint: SimplePoint, color?: string, label?: string): Point => ({
+  ...simplePoint,
+  color: color ?? "",
+  label: label ?? "",
+});

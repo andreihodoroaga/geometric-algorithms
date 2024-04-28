@@ -489,6 +489,5 @@ const triangulateYMonotonePolygon = (points: Point[]) => {
 
   algorithmGraphicIndications.push(...finalSteps(pointsStack, sortedPolygonPoints));
 
-  console.log(algorithmGraphicIndications);
   return algorithmGraphicIndications;
 };
