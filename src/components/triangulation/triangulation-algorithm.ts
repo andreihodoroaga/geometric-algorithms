@@ -166,10 +166,6 @@ const isInteriorDiagonal = (
   }
 };
 
-const stackStatus = (stack: Point[]) => {
-  return `Stiva: ${stack.length ? stack.map((el) => el.label).join(", ") : "-"}`;
-};
-
 const sortStepExplanation = (sortedPoints: Point[]) => {
   let message = "Varfurile se ordoneaza descrescător după y (dacă ordinea este egală, se folosește abscisa): ";
 
@@ -196,6 +192,10 @@ const initializeStackStep = (pointsStack: Point[]) => {
         element: pointsStack[1],
         color: LIGHT_GREEN_COLOR,
         size: 6,
+      },
+      {
+        type: "stackStatus",
+        element: [...pointsStack],
       },
     ],
   };
@@ -225,7 +225,7 @@ const pointAndTopOfStackInSameChainStep = (currentPoint: Point, pointsStack: Poi
 
 const extractTopOfStackStep = (pointsStack: Point[], lastPointFromStack: Point) => {
   return {
-    explanation: `Se extrage varful ${lastPointFromStack.label} din stiva. ${stackStatus(pointsStack)}`,
+    explanation: `Se extrage varful ${lastPointFromStack.label} din stiva.`,
     graphicDrawingsStepList: [
       {
         type: "point",
@@ -233,15 +233,17 @@ const extractTopOfStackStep = (pointsStack: Point[], lastPointFromStack: Point) 
         color: RED_COLOR,
         size: 6,
       },
+      {
+        type: "stackStatus",
+        element: [...pointsStack],
+      },
     ],
   };
 };
 
 const interiorDiagonalStep = (pointsStack: Point[], currentPoint: Point, lastPointFromStack: Point) => {
   return {
-    explanation: `Se extrage varful ${lastPointFromStack.label} din stiva pentru ca formeaza cu ${
-      currentPoint.label
-    } diagonala interioara poligonului. ${stackStatus(pointsStack)}`,
+    explanation: `Se extrage varful ${lastPointFromStack.label} din stiva pentru ca formeaza cu ${currentPoint.label} diagonala interioara poligonului.`,
     graphicDrawingsStepList: [
       {
         type: "addDiagonal",
@@ -264,6 +266,10 @@ const interiorDiagonalStep = (pointsStack: Point[], currentPoint: Point, lastPoi
         color: ORANGE_COLOR,
         size: 6,
       },
+      {
+        type: "stackStatus",
+        element: [...pointsStack],
+      },
     ],
   };
 };
@@ -277,9 +283,7 @@ const insertPointBackInStackStep = (
   const stackPointPositionMessage = stackPointPosition === "last" ? "ultimul" : "primul";
 
   return {
-    explanation: `Se insereaza inapoi in stiva ${stackPointPositionMessage} varf extras, ${
-      stackPoint.label
-    } si varful curent ${currentPoint.label}. ${stackStatus(pointsStack)}`,
+    explanation: `Se insereaza inapoi in stiva ${stackPointPositionMessage} varf extras, ${stackPoint.label} si varful curent ${currentPoint.label}.`,
     graphicDrawingsStepList: [
       {
         type: "point",
@@ -292,6 +296,10 @@ const insertPointBackInStackStep = (
         element: currentPoint,
         color: LIGHT_GREEN_COLOR,
         size: 6,
+      },
+      {
+        type: "stackStatus",
+        element: [...pointsStack],
       },
     ],
   };
@@ -331,9 +339,7 @@ const pointsInDifferentChainsStep = (currentPoint: Point, pointsStack: Point[]) 
 
 const addDiagonalDifferentChainsStep = (pointsStack: Point[], currentPoint: Point, topOfStackPoint: Point) => {
   return {
-    explanation: `Se extrage din stiva varful ${topOfStackPoint.label} si se adauga noua diagonala: ${
-      currentPoint.label
-    }${topOfStackPoint.label}. ${stackStatus(pointsStack)}`,
+    explanation: `Se extrage din stiva varful ${topOfStackPoint.label} si se adauga noua diagonala: ${currentPoint.label}${topOfStackPoint.label}.`,
     graphicDrawingsStepList: [
       {
         type: "addDiagonal",
@@ -356,21 +362,27 @@ const addDiagonalDifferentChainsStep = (pointsStack: Point[], currentPoint: Poin
         color: ORANGE_COLOR,
         size: 6,
       },
+      {
+        type: "stackStatus",
+        element: [...pointsStack],
+      },
     ],
   };
 };
 
 const firstPointInStackStep = (pointsStack: Point[], extractedPoint: Point) => {
   return {
-    explanation: `Se extrage din stiva varful ${
-      extractedPoint.label
-    }, dar fiind ultimul, nu se adauga diagonala. ${stackStatus(pointsStack)}`,
+    explanation: `Se extrage din stiva varful ${extractedPoint.label}, dar fiind ultimul, nu se adauga diagonala.`,
     graphicDrawingsStepList: [
       {
         type: "point",
         element: extractedPoint,
         color: RED_COLOR,
         size: 6,
+      },
+      {
+        type: "stackStatus",
+        element: [...pointsStack],
       },
     ],
   };

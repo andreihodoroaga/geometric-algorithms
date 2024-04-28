@@ -5,7 +5,7 @@
   grid-template-areas:
     "canvas panel"
     "canvas explanations"
-    "controls .";
+    "controls explanationsExtra";
   grid-template-columns: 2.25fr 1fr;
   grid-template-rows: 70px auto 40px;
   grid-column-gap: 2rem;
@@ -35,6 +35,10 @@
   display: flex;
   align-items: center;
   gap: 36px;
+}
+
+.explanations-extra {
+  grid-area: explanationsExtra;
 }
 
 .error-snackbar {

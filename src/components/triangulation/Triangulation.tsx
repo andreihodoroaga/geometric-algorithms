@@ -1,8 +1,28 @@
+import "./Triangulation.scss";
+import { VisualizationStep } from "../../shared/models/algorithm";
 import { Point } from "../../shared/models/geometry";
 import { determinePointsForAlgorithm } from "../../shared/util";
 import { CanvasMode } from "../canvas/helpers";
-import VisualizationEngine from "../visualization-engine/VisualizationEngine";
+import VisualizationEngine, { ExplanationsExtraProps } from "../visualization-engine/VisualizationEngine";
+import Stack from "./Stack";
 import { checkValidPolygon, computeTriangulationSteps, isPolygonMonotone } from "./triangulation-algorithm";
+
+const getLastStackStatus = (steps: VisualizationStep[], currentStepIndex: number | null) => {
+  if (!currentStepIndex) {
+    return [];
+  }
+
+  for (let i = currentStepIndex; i >= 0; i--) {
+    if (currentStepIndex === steps.length) {
+      return [];
+    }
+    const stackStep = steps[i].graphicDrawingsStepList?.find((el) => el.type === "stackStatus");
+    if (stackStep) {
+      return stackStep.element.map((el: Point) => el.label);
+    }
+  }
+  return [];
+};
 
 export default function Triangulation() {
   // Returns the visualization steps or an error
@@ -18,11 +38,16 @@ export default function Triangulation() {
     return visualizationSteps;
   };
 
+  const extraExplanation = ({ steps, currentStepIndex }: ExplanationsExtraProps) => {
+    return <Stack elements={getLastStackStatus(steps, currentStepIndex)} />;
+  };
+
   return (
     <VisualizationEngine
       computeVisualizationSteps={computeVisualizationSteps}
       explanationsTitle="Triangulare"
       mode={CanvasMode.polygon}
+      ExplanationsExtra={extraExplanation}
     ></VisualizationEngine>
   );
 }

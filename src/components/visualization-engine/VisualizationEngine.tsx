@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { ComponentType, useEffect, useState } from "react";
 import {
   DEFAULT_POINT_SIZE,
   ICircle,
@@ -46,12 +46,18 @@ const clearPointsFromCanvas = (points: Point[]) => {
   );
 };
 
+export interface ExplanationsExtraProps {
+  steps: VisualizationStep[];
+  currentStepIndex: number | null;
+}
+
 interface VisualizationEngineProps {
   computeVisualizationSteps: (points: Point[], canvasDimensions: CanvasDimensions) => VisualizationStep[] | string;
   explanationsTitle: string;
   mode: CanvasMode;
   children?: React.ReactNode;
   showSpeedControl?: boolean;
+  ExplanationsExtra?: ComponentType<ExplanationsExtraProps>;
 }
 
 // A component to be used in every algorithm
@@ -61,6 +67,7 @@ export default function VisualizationEngine({
   mode,
   children,
   showSpeedControl,
+  ExplanationsExtra,
 }: VisualizationEngineProps) {
   const minAlgorithmSpeedInMs = 25;
   const speedUpdateStep = 125;
@@ -393,6 +400,11 @@ export default function VisualizationEngine({
           </div>
         </div>
       )}
+      <div className="explanations-extra">
+        {!visualizationEnded && ExplanationsExtra && (
+          <ExplanationsExtra steps={steps} currentStepIndex={currentStepIndex} />
+        )}
+      </div>
       <Snackbar
         className="error-snackbar"
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
