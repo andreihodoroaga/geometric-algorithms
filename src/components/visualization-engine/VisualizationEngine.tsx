@@ -247,6 +247,8 @@ export default function VisualizationEngine({
   const resetEverything = () => {
     setPoints([]);
     setLines([]);
+    setCircles([]);
+    setParabolas([]);
     setCurrentStepIndex(null);
     setExplanations([]);
     setShouldResetCanvas(true);
