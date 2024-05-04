@@ -1,7 +1,7 @@
 import { Point, convertPointBetweenAlgorithmAndCanvas } from "../../shared/models/geometry";
 import { CanvasDimensions, CanvasMode } from "../canvas/helpers";
 import VisualizationEngine from "../visualization-engine/VisualizationEngine";
-import { computeFortuneAlgorithmSteps } from "./algorithm";
+import { computeFortuneAlgorithmSteps } from "./fortune-algorithm";
 
 export default function VoronoiDiagram() {
   const computeVisualizationSteps = (points: Point[], canvasDimensions: CanvasDimensions) => {

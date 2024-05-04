@@ -1,27 +1,5 @@
-import { Point, SimplePoint } from "../../shared/models/geometry";
-import { getPointFromSimplePoint } from "../../shared/util";
+import { generateMockPoints, mockPointsFromSimplePoints } from "../../shared/test-util";
 import { computeTriangulationSteps, leftAndRightChains } from "./triangulation-algorithm";
-
-const generateMockPoints = (size: number) => {
-  const mockPoints: Point[] = [];
-
-  for (let i = 0; i < size; i++) {
-    const mockPoint: Point = {
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      label: `Point ${i + 1}`,
-      color: "blue",
-    };
-
-    mockPoints.push(mockPoint);
-  }
-
-  return mockPoints;
-};
-
-const mockPointsFromSimplePoints = (simplePoints: SimplePoint[]): Point[] => {
-  return simplePoints.map((p) => getPointFromSimplePoint(p));
-};
 
 describe("Triangulation algorithm", () => {
   it("should have only one step if the polygon is a triangle", () => {

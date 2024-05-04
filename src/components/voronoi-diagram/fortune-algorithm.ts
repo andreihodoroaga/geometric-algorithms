@@ -303,8 +303,12 @@ export const computeFortuneAlgorithmSteps = (points: Point[], canvasDimensions: 
 
     // add circle events
     for (let i = 1; i < beachLine.length - 1; i++) {
-      const upperHalfEdge = voronoiHalfEdges.find((edge) => edge.lowerArcId == beachLine[i].id)!;
-      const lowerHalfEdge = voronoiHalfEdges.find((edge) => edge.upperArcId == beachLine[i].id)!;
+      const upperHalfEdge = voronoiHalfEdges.find((edge) => edge.lowerArcId == beachLine[i].id);
+      const lowerHalfEdge = voronoiHalfEdges.find((edge) => edge.upperArcId == beachLine[i].id);
+
+      if (!upperHalfEdge || !lowerHalfEdge) {
+        continue;
+      }
 
       // no better way to check if the circle event has already been added
       if (
