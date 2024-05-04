@@ -143,11 +143,18 @@ export const leftAndRightChains = (points: Point[]) => {
 
   // the firstChain has at least two values (the topmost and lowest points), while the secondChain can have none
   // if the first chain is the right one (when the points are in clockwise order), swap them
-  if (secondChain.length && firstChain[1].x > secondChain[0].x) {
-    return [secondChain, firstChain];
-  } else {
+  if (secondChain.length) {
+    if (firstChain[1].x > secondChain[0].x) {
+      return [secondChain, firstChain];
+    }
     return [firstChain, secondChain];
   }
+  // if the firstChain contains all points, distinguish if it should be the left or right chain
+  if (firstChain[0].x > firstChain[1].x) {
+    // the first chain is the left chain
+    return [firstChain, secondChain];
+  }
+  return [secondChain, firstChain];
 };
 
 const isInteriorDiagonal = (
@@ -246,10 +253,6 @@ const interiorDiagonalStep = (pointsStack: Point[], currentPoint: Point, lastPoi
     explanation: `Se extrage varful ${lastPointFromStack.label} din stiva pentru ca formeaza cu ${currentPoint.label} diagonala interioara poligonului.`,
     graphicDrawingsStepList: [
       {
-        type: "addDiagonal",
-        element: [currentPoint, lastPointFromStack],
-      },
-      {
         type: "line",
         element: [currentPoint, lastPointFromStack],
         color: GREEN_COLOR,
@@ -312,10 +315,6 @@ const pointsInDifferentChainsStep = (currentPoint: Point, pointsStack: Point[]) 
     }, sunt in lanturi diferite.`,
     graphicDrawingsStepList: [
       {
-        type: "addDiagonal",
-        element: [currentPoint, pointsStack[pointsStack.length - 1]],
-      },
-      {
         type: "line",
         element: [currentPoint, pointsStack[pointsStack.length - 1]],
         color: ORANGE_COLOR,
@@ -341,10 +340,6 @@ const addDiagonalDifferentChainsStep = (pointsStack: Point[], currentPoint: Poin
   return {
     explanation: `Se extrage din stiva varful ${topOfStackPoint.label} si se adauga noua diagonala: ${currentPoint.label}${topOfStackPoint.label}.`,
     graphicDrawingsStepList: [
-      {
-        type: "addDiagonal",
-        element: [currentPoint, topOfStackPoint],
-      },
       {
         type: "line",
         element: [currentPoint, topOfStackPoint],
@@ -386,6 +381,35 @@ const firstPointInStackStep = (pointsStack: Point[], extractedPoint: Point) => {
       },
     ],
   };
+};
+
+const finalSteps = (pointsStack: Point[], sortedPolygonPoints: Point[]) => {
+  const steps: VisualizationStep[] = [];
+  const lastPointInSortedList = sortedPolygonPoints[sortedPolygonPoints.length - 1];
+
+  if (pointsStack.length > 3) {
+    steps.push({
+      explanation: `Se adauga diagonale de la ultimul varf din lista, ${lastPointInSortedList.label}, la varful stivei (exceptand primul si ultimul). `,
+    });
+  }
+  for (let i = 1; i < pointsStack.length - 1; i++) {
+    steps.push({
+      explanation: `Se adauga diagonala ${lastPointInSortedList.label}${pointsStack[i].label}.`,
+      graphicDrawingsStepList: [
+        {
+          type: "line",
+          element: [lastPointInSortedList, pointsStack[i]],
+          color: GREEN_COLOR,
+        },
+      ],
+    });
+  }
+
+  steps.push({
+    explanation: "Triangularea este completa.",
+  });
+
+  return steps;
 };
 
 const makeStackPointsLightGreenStep = (points: Point[], pointsStack: Point[], oneOfLastTwoPoints: boolean) => {
@@ -468,6 +492,8 @@ const triangulateYMonotonePolygon = (points: Point[]) => {
 
     algorithmGraphicIndications.push(makeStackPointsLightGreenStep(points, pointsStack, i >= points.length - 2));
   }
+
+  algorithmGraphicIndications.push(...finalSteps(pointsStack, sortedPolygonPoints));
 
   return algorithmGraphicIndications;
 };
