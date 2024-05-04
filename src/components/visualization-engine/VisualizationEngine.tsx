@@ -57,6 +57,8 @@ interface VisualizationEngineProps {
   mode: CanvasMode;
   children?: React.ReactNode;
   showSpeedControl?: boolean;
+  minAlgorithmSpeedInMs?: number;
+  speedUpdateStep?: number;
   ExplanationsExtra?: ComponentType<ExplanationsExtraProps>;
 }
 
@@ -68,9 +70,9 @@ export default function VisualizationEngine({
   children,
   showSpeedControl,
   ExplanationsExtra,
+  minAlgorithmSpeedInMs = 25,
+  speedUpdateStep = 125,
 }: VisualizationEngineProps) {
-  const minAlgorithmSpeedInMs = 25;
-  const speedUpdateStep = 125;
   const speedRangeMin = 0;
   const speedRangeMax = 10;
 
@@ -125,6 +127,9 @@ export default function VisualizationEngine({
     const currentStep = steps[currentStepIndex!];
     if (currentStep.explanation) {
       setExplanations((explanations) => [...explanations, currentStep.explanation!]);
+    }
+    if (currentStep.explanations) {
+      setExplanations((explanations) => [...explanations, ...currentStep.explanations!]);
     }
     if (currentStep.graphicDrawingsStepList) {
       addStepDrawings(currentStep.graphicDrawingsStepList);

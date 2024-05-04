@@ -14,6 +14,8 @@ export default function VoronoiDiagram() {
       computeVisualizationSteps={computeVisualizationSteps}
       explanationsTitle="Fortune"
       mode={CanvasMode.points}
+      minAlgorithmSpeedInMs={15}
+      speedUpdateStep={4}
     ></VisualizationEngine>
   );
 }

@@ -206,19 +206,16 @@ const isBeachLineOutOfSight = (beachLine: IParabolaForAlg[], canvasDimensions: C
   return true;
 };
 
-const siteEventExplanation = (parabola: IParabolaForAlg) => ({
-  explanation: `Eveniment de tip locatie: se adauga parabola punctului ${parabola.focus.label}.`,
-});
+const siteEventExplanation = (parabola: IParabolaForAlg) =>
+  `Eveniment de tip locatie: se adauga parabola punctului ${parabola.focus.label}.`;
 
-const circleEventDetectedExplanation = (beachLine: IParabolaForAlg[], i: number) => ({
-  explanation: `Eveniment de tip cerc detectat: se adauga cercul asociat muchiilor formate de parabolele punctelor ${
+const circleEventDetectedExplanation = (beachLine: IParabolaForAlg[], i: number) =>
+  `Eveniment de tip cerc detectat: se adauga cercul asociat muchiilor formate de parabolele punctelor ${
     beachLine[i - 1].focus.label
-  } si ${beachLine[i].focus.label}, respectiv ${beachLine[i].focus.label} si ${beachLine[i + 1].focus.label}.`,
-});
+  } si ${beachLine[i].focus.label}, respectiv ${beachLine[i].focus.label} si ${beachLine[i + 1].focus.label}.`;
 
-const circleEventCompletedExplanation = (parabolaToBeRemoved: IParabolaForAlg) => ({
-  explanation: `Eveniment de tip cerc complet: dispare parabola asociata punctului ${parabolaToBeRemoved.focus.label} si apare un varf al diagramei.`,
-});
+const circleEventCompletedExplanation = (parabolaToBeRemoved: IParabolaForAlg) =>
+  `Eveniment de tip cerc complet: dispare parabola asociata punctului ${parabolaToBeRemoved.focus.label} si apare un varf al diagramei.`;
 
 export const computeFortuneAlgorithmSteps = (points: Point[], canvasDimensions: CanvasDimensions) => {
   const visualizationSteps: VisualizationStep[] = [];
@@ -449,20 +446,26 @@ export const computeFortuneAlgorithmSteps = (points: Point[], canvasDimensions: 
         ...voronoiLineDrawings,
         ...circleDrawings,
       ],
+      explanations: stepExplanations,
     };
 
-    visualizationSteps.push(...[newStep, ...stepExplanations]);
+    visualizationSteps.push(newStep);
     sweepLineX = getSweepLineNextPosition(sweepLineX, sweepLineUpdateStep, circleEvents);
   }
 
   // delete parabolas and circles that might still be visible when the algorithm ends
   if (visualizationSteps.length >= 1) {
     const lastStep = visualizationSteps[visualizationSteps.length - 1];
+    visualizationSteps.push({});
     visualizationSteps.push({
       ...lastStep,
-      graphicDrawingsStepList: lastStep.graphicDrawingsStepList?.filter(
-        (step) => step.type !== "circle" && step.type !== "parabola"
-      ),
+      graphicDrawingsStepList: [
+        {
+          type: "resetEverything",
+        },
+        ...(lastStep.graphicDrawingsStepList?.filter((step) => step.type !== "circle" && step.type !== "parabola") ??
+          []),
+      ],
       explanation: "Algoritm finalizat",
     });
   }
