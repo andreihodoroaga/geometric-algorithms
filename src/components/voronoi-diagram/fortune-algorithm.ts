@@ -206,6 +206,20 @@ const isBeachLineOutOfSight = (beachLine: IParabolaForAlg[], canvasDimensions: C
   return true;
 };
 
+const siteEventExplanation = (parabola: IParabolaForAlg) => ({
+  explanation: `Eveniment de tip locatie: se adauga parabola punctului ${parabola.focus.label}.`,
+});
+
+const circleEventDetectedExplanation = (beachLine: IParabolaForAlg[], i: number) => ({
+  explanation: `Eveniment de tip cerc detectat: se adauga cercul asociat muchiilor formate de parabolele punctelor ${
+    beachLine[i - 1].focus.label
+  } si ${beachLine[i].focus.label}, respectiv ${beachLine[i].focus.label} si ${beachLine[i + 1].focus.label}.`,
+});
+
+const circleEventCompletedExplanation = (parabolaToBeRemoved: IParabolaForAlg) => ({
+  explanation: `Eveniment de tip cerc complet: dispare parabola asociata punctului ${parabolaToBeRemoved.focus.label} si apare un varf al diagramei.`,
+});
+
 export const computeFortuneAlgorithmSteps = (points: Point[], canvasDimensions: CanvasDimensions) => {
   const visualizationSteps: VisualizationStep[] = [];
   const beachLine: IParabolaForAlg[] = [];
@@ -218,6 +232,7 @@ export const computeFortuneAlgorithmSteps = (points: Point[], canvasDimensions: 
   const sweepLineUpdateStep = 1;
 
   while (sweepLineX < canvasDimensions.width || !isBeachLineOutOfSight(beachLine, canvasDimensions)) {
+    const stepExplanations = [];
     const startPointLine: Point = { x: sweepLineX, y: -1000, label: "", color: GREY_COLOR };
     const endPointLine: Point = { x: sweepLineX, y: 1000, label: "", color: GREY_COLOR };
 
@@ -236,6 +251,7 @@ export const computeFortuneAlgorithmSteps = (points: Point[], canvasDimensions: 
       if (lastPointPassedIdx == 0) {
         const firstParabola = getParabolaFromYCoordinates(sortedPoints[0], sweepLineX, 0, -canvasDimensions.height);
         beachLine.push(firstParabola);
+        stepExplanations.push(siteEventExplanation(firstParabola));
       } else {
         const newParabola = getParabolaFromYCoordinates(
           sortedPoints[lastPointPassedIdx],
@@ -243,6 +259,8 @@ export const computeFortuneAlgorithmSteps = (points: Point[], canvasDimensions: 
           0,
           -canvasDimensions.height
         );
+        stepExplanations.push(siteEventExplanation(newParabola));
+
         for (let i = 0; i < beachLine.length; i++) {
           if (beachLine[i].startPoint.y > newParabola.focus.y && beachLine[i].endPoint.y < newParabola.focus.y) {
             const intersectionPoints = getIntersectionPointsBetweenParabolas(beachLine[i], newParabola);
@@ -327,6 +345,7 @@ export const computeFortuneAlgorithmSteps = (points: Point[], canvasDimensions: 
       if (pointOfIntersection) {
         const radius = distance(beachLine[i].focus, pointOfIntersection);
         circleEvents.push({ upperHalfEdge, lowerHalfEdge, center: pointOfIntersection, radius });
+        stepExplanations.push(circleEventDetectedExplanation([...beachLine], i));
       }
     }
 
@@ -379,7 +398,7 @@ export const computeFortuneAlgorithmSteps = (points: Point[], canvasDimensions: 
           upperArcId: circleEvents[i].upperHalfEdge.upperArcId,
           lowerArcId: circleEvents[i].lowerHalfEdge.lowerArcId,
         });
-
+        stepExplanations.push(circleEventCompletedExplanation(beachLine[arcToRemoveIdx]));
         beachLine.splice(arcToRemoveIdx, 1);
       }
     }
@@ -432,7 +451,7 @@ export const computeFortuneAlgorithmSteps = (points: Point[], canvasDimensions: 
       ],
     };
 
-    visualizationSteps.push(newStep);
+    visualizationSteps.push(...[newStep, ...stepExplanations]);
     sweepLineX = getSweepLineNextPosition(sweepLineX, sweepLineUpdateStep, circleEvents);
   }
 
