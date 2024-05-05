@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ILine, Point } from "../../shared/models/geometry";
 import Canvas from "../canvas/Canvas";
 import Explanations from "../explanations/Explanations";
@@ -11,30 +11,18 @@ import { CanvasDimensions } from "../canvas/helpers";
 
 export default function Duality() {
   const [primalPoints, setPrimalPoints] = useState<Point[]>([]);
-  const [primalLines, setPrimalLines] = useState<ILine[]>([]);
   const [dualPoints, setDualPoints] = useState<Point[]>([]);
-  const [dualLines, setDualLines] = useState<ILine[]>([]);
   const [explanations, setExplanations] = useState<string[]>([]);
   const [pointX, setPointX] = useState<string>("");
   const [pointY, setPointY] = useState<string>("");
   const [lineX, setLineX] = useState<string>("");
   const [lineY, setLineY] = useState<string>("");
   const [axisMultiplier, setAxisMultiplier] = useState(10);
-  const OUT_OF_BOUNDS_X = 1000; // used to simulate an "infinite" line
+  const OUT_OF_BOUNDS_X = 2000; // used to simulate an "infinite" line
   const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({
     width: 0,
     height: 0,
   });
-
-  // TODO: no longer reset these when changing the axisMultiplier
-  // move the axisMultiplier state to the canvas, and make it so that the points from here
-  // are given as they are, without multiplying them, and let the canvas handle that
-  useEffect(() => {
-    setPrimalPoints([]);
-    setPrimalLines([]);
-    setDualPoints([]);
-    setDualLines([]);
-  }, [axisMultiplier]);
 
   const isFormValid = (xValue: string, yValue: string) => {
     if (xValue === "" || yValue === "") {
@@ -100,18 +88,13 @@ export default function Duality() {
       return;
     }
 
-    const newColor = randomColor();
     const newPoint = {
-      x: parseInt(pointX) * axisMultiplier,
-      y: parseInt(pointY) * axisMultiplier,
+      x: parseInt(pointX),
+      y: parseInt(pointY),
       label: `(${pointX},${pointY})`,
-      color: newColor,
+      color: randomColor(),
     };
     setPrimalPoints((points) => [...points, newPoint]);
-    // although we scale points by valueMultiplier to view them nicely,
-    // the slope must not be multiplied (the point (1, 2) becomes (10, 20) for the centered canvas)
-    // but the line should not be 10x - 20, but rather x - 20
-    setDualLines((lines) => [...lines, getLineFromEquation(parseInt(pointX), newPoint.y, newColor)]);
     setExplanations((explanations) => [...explanations, getPointToLineExplanation(pointX, pointY)]);
 
     setPointX("");
@@ -123,24 +106,16 @@ export default function Duality() {
       return;
     }
 
-    const newColor = randomColor();
-    // adding the - before the y because the function creates the mx - n line
-    const newLine = getLineFromEquation(parseInt(lineX), -parseInt(lineY) * axisMultiplier, newColor);
-    setPrimalLines((lines) => [...lines, newLine]);
-
-    const newPointX = parseInt(lineX) * axisMultiplier;
-    const newPointY = -parseInt(lineY) * axisMultiplier;
+    const newPointX = parseInt(lineX);
+    const newPointY = -parseInt(lineY);
     const newPoint = {
       x: newPointX,
       y: newPointY,
-      label: `(${lineX},${-parseInt(lineY)})`,
-      color: newColor,
+      label: `(${newPointX},${newPointY})`,
+      color: randomColor(),
     };
     setDualPoints((points) => [...points, newPoint]);
-    setExplanations((explanations) => [
-      ...explanations,
-      getLineToPointExplanation(lineX, (-parseInt(lineY)).toString()),
-    ]);
+    setExplanations((explanations) => [...explanations, getLineToPointExplanation(lineX, newPointY.toString())]);
 
     setLineX("");
     setLineY("");
@@ -150,14 +125,35 @@ export default function Duality() {
     return value.replace(/[^-0-9]/g, "");
   };
 
+  const pointsScaled = (points: Point[]) =>
+    points.map((point) => ({
+      ...point,
+      x: point.x * axisMultiplier,
+      y: point.y * axisMultiplier,
+    }));
+
+  const primalPointsScaled = pointsScaled(primalPoints);
+  const dualPointsScaled = pointsScaled(dualPoints);
+
+  // although we scale points by valueMultiplier to view them nicely,
+  // the slope must not be multiplied (the point (1, 2) becomes (10, 20) for the centered canvas)
+  // but the line should not be 10x - 20, but rather x - 20
+  const primalLinesScaled = dualPointsScaled.map(
+    (point) => getLineFromEquation(point.x / axisMultiplier, -point.y, point.color) // adding the - before the y because the function creates the mx - n line
+  );
+
+  const dualLinesScaled = primalPointsScaled.map((point) =>
+    getLineFromEquation(point.x / axisMultiplier, point.y, point.color)
+  );
+
   return (
     <>
       <div className="canvas-wrapper canvas-split-mode">
         <Canvas
-          points={primalPoints}
-          setPoints={setPrimalPoints}
-          lines={primalLines}
-          setLines={setPrimalLines}
+          points={primalPointsScaled}
+          setPoints={() => void 0}
+          lines={primalLinesScaled}
+          setLines={() => void 0}
           hasOverlayText={false}
           axes={true}
           originInCenter={true}
@@ -167,10 +163,10 @@ export default function Duality() {
           setCanvasDimensions={setCanvasDimensions}
         />
         <Canvas
-          points={dualPoints}
-          setPoints={() => []}
-          lines={dualLines}
-          setLines={() => []}
+          points={dualPointsScaled}
+          setPoints={() => void 0}
+          lines={dualLinesScaled}
+          setLines={() => void 0}
           hasOverlayText={false}
           axes={true}
           originInCenter={true}
