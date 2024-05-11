@@ -23,6 +23,11 @@ import {
 } from "../../shared/util";
 import { CanvasDimensions } from "../canvas/helpers";
 
+export enum Orientation {
+  Vertical = "Verticala",
+  Horizontal = "Orizontala",
+}
+
 // startPoint will always be the "midpoint" (the common point with the other half edge )
 type IVoronoiHalfEdge = ILine & {
   upperArcId: string;
@@ -217,7 +222,18 @@ const circleEventDetectedExplanation = (beachLine: IParabolaForAlg[], i: number)
 const circleEventCompletedExplanation = (parabolaToBeRemoved: IParabolaForAlg) =>
   `Eveniment de tip cerc complet: dispare parabola asociata punctului ${parabolaToBeRemoved.focus.label} si apare un varf al diagramei.`;
 
-export const computeFortuneAlgorithmSteps = (points: Point[], canvasDimensions: CanvasDimensions) => {
+export const computeFortuneAlgorithmSteps = (
+  points: Point[],
+  canvasDimensions: CanvasDimensions,
+  orientation: Orientation
+) => {
+  if (orientation === Orientation.Vertical) {
+    return computeFortuneAlgorithmStepsVerticalLineSweep(points, canvasDimensions);
+  }
+  return computeFortuneAlgorithmStepsVerticalLineSweep(points, canvasDimensions);
+};
+
+export const computeFortuneAlgorithmStepsVerticalLineSweep = (points: Point[], canvasDimensions: CanvasDimensions) => {
   const visualizationSteps: VisualizationStep[] = [];
   const beachLine: IParabolaForAlg[] = [];
   const voronoiHalfEdges: IVoronoiHalfEdge[] = [];
