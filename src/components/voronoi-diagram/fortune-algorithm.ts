@@ -15,8 +15,8 @@ import {
   isPointInsideTheCanvas,
 } from "../../shared/models/geometry";
 import {
-  GREEN_COLOR,
   GREY_COLOR,
+  ORANGE_COLOR,
   comparatorPointsByXAscending,
   getPointsWithIncreasedDistanceBetweenCloseOnes,
   sortList,
@@ -46,8 +46,9 @@ const getNewParabolaWithOldId = (
   newParabola: IParabolaForAlgWithoutId
 ): IParabolaForAlg => {
   return {
-    id: oldParabola.id,
     ...newParabola,
+    id: oldParabola.id,
+    color: oldParabola.color,
   };
 };
 
@@ -63,7 +64,7 @@ const getHalfEdge = (midPoint: SimplePoint, endPoint: SimplePoint) => {
       color: GREY_COLOR,
       label: "",
     },
-    color: GREEN_COLOR,
+    color: GREY_COLOR,
   };
 };
 
@@ -171,7 +172,7 @@ const updateVoronoiHalfEdges = (beachLine: IParabolaForAlg[], voronoiHalfEdges: 
       ) {
         voronoiHalfEdges[j] = {
           ...voronoiHalfEdges[j],
-          endPoint: { ...beachLine[i - 1].endPoint, label: "", color: GREEN_COLOR },
+          endPoint: { ...beachLine[i - 1].endPoint, label: "", color: GREY_COLOR },
         };
         break;
       }
@@ -209,6 +210,12 @@ const isBeachLineOutOfSight = (beachLine: IParabolaForAlg[], canvasDimensions: C
     }
   }
   return true;
+};
+
+const arcToBeRemovedIdx = (beachLine: IParabolaForAlg[], circleEvent: CircleEvent) => {
+  return beachLine.findIndex(
+    (arc) => arc.id === circleEvent.upperHalfEdge.lowerArcId && arc.id === circleEvent.lowerHalfEdge.upperArcId
+  ); // the two id's we are checking against arc.id should be equal by definition, but doesn't hurt to do an extra check
 };
 
 const siteEventExplanation = (parabola: IParabolaForAlg) =>
@@ -357,7 +364,11 @@ export const computeFortuneAlgorithmStepsVerticalLineSweep = (points: Point[], c
       const pointOfIntersection = getIntersectionBetweenRays(upperHalfEdge, lowerHalfEdge);
       if (pointOfIntersection) {
         const radius = distance(beachLine[i].focus, pointOfIntersection);
-        circleEvents.push({ upperHalfEdge, lowerHalfEdge, center: pointOfIntersection, radius });
+        const circleEvent = { upperHalfEdge, lowerHalfEdge, center: pointOfIntersection, radius };
+        const middleArcIdx = arcToBeRemovedIdx(beachLine, circleEvent);
+        beachLine[middleArcIdx].color = ORANGE_COLOR;
+
+        circleEvents.push(circleEvent);
         stepExplanations.push(circleEventDetectedExplanation([...beachLine], i));
       }
     }
@@ -365,10 +376,7 @@ export const computeFortuneAlgorithmStepsVerticalLineSweep = (points: Point[], c
     // handle circle events
     for (let i = 0; i < circleEvents.length; i++) {
       if (circleEvents[i].center.x + circleEvents[i].radius <= sweepLineX) {
-        const arcToRemoveIdx = beachLine.findIndex(
-          (arc) =>
-            arc.id === circleEvents[i].upperHalfEdge.lowerArcId && arc.id === circleEvents[i].lowerHalfEdge.upperArcId
-        ); // the two id's we are checking against arc.id should be equal by definition, but doesn't hurt to do an extra check
+        const arcToRemoveIdx = arcToBeRemovedIdx(beachLine, circleEvents[i]);
 
         // remove the two complete edges, making sure their endpoints are in the center of the triangle
         // this handles the problem that after a step of the sweep line, the parabolas may grow a bit past that point
@@ -407,7 +415,7 @@ export const computeFortuneAlgorithmStepsVerticalLineSweep = (points: Point[], c
             label: "",
             color: "",
           },
-          color: GREEN_COLOR,
+          color: GREY_COLOR,
           upperArcId: circleEvents[i].upperHalfEdge.upperArcId,
           lowerArcId: circleEvents[i].lowerHalfEdge.lowerArcId,
         });
@@ -422,7 +430,6 @@ export const computeFortuneAlgorithmStepsVerticalLineSweep = (points: Point[], c
       parabolaDrawings.push({
         type: "parabola", // some will be arcs actually, but can be represented as a (partial) parabola
         element: arc,
-        color: GREY_COLOR,
       });
     });
 
@@ -431,7 +438,7 @@ export const computeFortuneAlgorithmStepsVerticalLineSweep = (points: Point[], c
       voronoiLineDrawings.push({
         type: "line",
         element: [line.startPoint, line.endPoint],
-        color: GREEN_COLOR,
+        color: GREY_COLOR,
       });
     });
 

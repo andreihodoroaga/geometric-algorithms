@@ -312,7 +312,7 @@ export default function Canvas({
           {getPointsToShow()}
           {getLinesToShow()}
           {parabolas?.map((parabola) => (
-            <Parabola parabola={parabola} key={uniqueId()} />
+            <Parabola parabola={parabola} key={uniqueId()} color={parabola.color} />
           ))}
           {circles?.map((circle) => (
             <CircleComponent circle={circle} key={uniqueId()} />

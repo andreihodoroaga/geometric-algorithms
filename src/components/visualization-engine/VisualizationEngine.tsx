@@ -199,7 +199,10 @@ export default function VisualizationEngine({
           endPoint = convertSimplePointBetweenAlgorithmAndCanvas(endPoint);
           controlPoint = convertSimplePointBetweenAlgorithmAndCanvas(controlPoint);
 
-          setParabolas((oldParabolas) => [...oldParabolas, { startPoint, endPoint, controlPoint }]);
+          setParabolas((oldParabolas) => [
+            ...oldParabolas,
+            { startPoint, endPoint, controlPoint, color: element.color },
+          ]);
           break;
         }
         case "circle": {

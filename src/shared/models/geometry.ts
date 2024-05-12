@@ -28,6 +28,7 @@ export interface IParabola {
   startPoint: SimplePoint;
   endPoint: SimplePoint;
   controlPoint: SimplePoint;
+  color?: string;
 }
 
 export interface IParabolaForAlg extends IParabola {
