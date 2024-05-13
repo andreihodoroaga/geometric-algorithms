@@ -6,12 +6,21 @@ import Button from "../button/Button";
 import { useState } from "react";
 import { Menu, MenuItem } from "@szhsin/react-menu";
 
+const LS_ORIENTATION_KEY = "Voronoi_Orientation";
+
 export default function VoronoiDiagram() {
-  const [orientation, setOrientation] = useState<Orientation>(Orientation.Vertical);
+  const [orientation, setOrientation] = useState<Orientation>(
+    (localStorage.getItem(LS_ORIENTATION_KEY) as Orientation) ?? Orientation.Vertical
+  );
 
   const computeVisualizationSteps = (points: Point[], canvasDimensions: CanvasDimensions) => {
     const pointsForAlg = points.map((p) => convertPointBetweenAlgorithmAndCanvas(p));
     return computeFortuneAlgorithmSteps(pointsForAlg, canvasDimensions, orientation);
+  };
+
+  const setOrientationInLS = (or: Orientation) => {
+    setOrientation(or);
+    localStorage.setItem(LS_ORIENTATION_KEY, or);
   };
 
   return (
@@ -34,7 +43,7 @@ export default function VoronoiDiagram() {
         transition
       >
         {Object.values(Orientation).map((or) => (
-          <MenuItem key={or} className={or === orientation ? "active" : ""} onClick={() => setOrientation(or)}>
+          <MenuItem key={or} className={or === orientation ? "active" : ""} onClick={() => setOrientationInLS(or)}>
             {or}
           </MenuItem>
         ))}
