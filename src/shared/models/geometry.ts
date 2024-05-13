@@ -1,5 +1,6 @@
 import { uniqueId } from "lodash";
 import { CanvasDimensions } from "../../components/canvas/helpers";
+import { Orientation } from "../../components/voronoi-diagram/fortune-algorithm";
 
 export interface SimplePoint {
   x: number;
@@ -33,7 +34,7 @@ export interface IParabola {
 
 export interface IParabolaForAlg extends IParabola {
   focus: Point;
-  directrixX: number;
+  directrixCoord: number;
   id: string;
 }
 
@@ -94,7 +95,7 @@ export const findAngle = (A: SimplePoint, B: SimplePoint, C: SimplePoint) => {
 };
 
 // finds the derivative from x=(y-k)^2+h w.r.t. x
-const getParabolaSlopeAtX = (x: number, a: number, h: number, chooseSmallerY: boolean) => {
+const getVerticalParabolaSlopeAtX = (x: number, a: number, h: number, chooseSmallerY: boolean) => {
   const derivative = 1 / (2 * a * Math.sqrt((x - h) / a));
   if (chooseSmallerY) {
     return derivative;
@@ -102,15 +103,15 @@ const getParabolaSlopeAtX = (x: number, a: number, h: number, chooseSmallerY: bo
   return -derivative;
 };
 
-export const getControlPoint = (
+const getControlPointVerticalParabola = (
   startPoint: SimplePoint,
   endPoint: SimplePoint,
   focus: SimplePoint,
-  directrixX: number
+  directrixCoord: number
 ) => {
-  const distVertexDirectrix = (1 / 2) * (directrixX - focus.x);
+  const distVertexDirectrix = (1 / 2) * (directrixCoord - focus.x);
   const a = -(1 / (4 * distVertexDirectrix));
-  const h = (focus.x + directrixX) / 2;
+  const h = (focus.x + directrixCoord) / 2;
 
   const x1 = startPoint.x;
   const y1 = startPoint.y;
@@ -119,8 +120,8 @@ export const getControlPoint = (
 
   const chooseSmallerYStartPoint = startPoint.y > focus.y;
   const chooseSmallerYEndPoint = endPoint.y > focus.y;
-  const m1 = getParabolaSlopeAtX(x1, a, h, chooseSmallerYStartPoint);
-  const m2 = getParabolaSlopeAtX(x2, a, h, chooseSmallerYEndPoint);
+  const m1 = getVerticalParabolaSlopeAtX(x1, a, h, chooseSmallerYStartPoint);
+  const m2 = getVerticalParabolaSlopeAtX(x2, a, h, chooseSmallerYEndPoint);
 
   // y - y1 = m1 * (x - x1) => y = y1 + m1*x - m1*x1
   // y - y2 = m2 * (x - x2) => y = y2 + m2*x - m2*x2
@@ -132,15 +133,43 @@ export const getControlPoint = (
   return { x, y };
 };
 
-// returns a parabola with start points at the specified y-coordinates
+const getControlPointHorizontalParabola = (
+  startPoint: SimplePoint,
+  endPoint: SimplePoint,
+  focus: SimplePoint,
+  sweepLineY: number
+) => {
+  const distVertexDirectrix = (1 / 2) * (sweepLineY - focus.y);
+  const a = -(1 / (4 * distVertexDirectrix));
+  const h = focus.x;
+
+  const x1 = startPoint.x;
+  const y1 = startPoint.y;
+  const x2 = endPoint.x;
+  const y2 = endPoint.y;
+
+  const m1 = 2 * a * (x1 - h);
+  const m2 = 2 * a * (x2 - h);
+
+  // y - y1 = m1 * (x - x1) => y = y1 + m1*x - m1*x1
+  // y - y2 = m2 * (x - x2) => y = y2 + m2*x - m2*x2
+  // (m1 - m2)x = y2 - m2 * x2 - y1 + m1 * x1
+
+  const x = (y2 - m2 * x2 - y1 + m1 * x1) / (m1 - m2);
+  const y = y1 + m1 * x - m1 * x1;
+
+  return { x, y };
+};
+
+// returns a vertical (opening to the left) parabola with start points at the specified y-coordinates
 export const getParabolaFromYCoordinates = (
   focus: Point,
   sweepLineX: number,
   startPointY = 0,
   endPointY = 0
 ): IParabolaForAlg => {
-  const distVertexDirectrix1 = (1 / 2) * (sweepLineX - focus.x);
-  const a = -(1 / (4 * distVertexDirectrix1));
+  const distVertexDirectrix = (1 / 2) * (sweepLineX - focus.x);
+  const a = -(1 / (4 * distVertexDirectrix));
   const h = (focus.x + sweepLineX) / 2;
   const k = focus.y;
 
@@ -157,11 +186,48 @@ export const getParabolaFromYCoordinates = (
     y: endPointY,
   };
 
-  const controlPoint = getControlPoint(startPoint, endPoint, focus, sweepLineX);
+  const controlPoint = getControlPointVerticalParabola(startPoint, endPoint, focus, sweepLineX);
 
   return {
     focus,
-    directrixX: sweepLineX,
+    directrixCoord: sweepLineX,
+    startPoint,
+    endPoint,
+    controlPoint,
+    id: uniqueId(),
+  };
+};
+
+// returns a horizontal (opening up) parabola with start points at the specified x-coordinates
+export const getParabolaFromXCoordinates = (
+  focus: Point,
+  sweepLineY: number,
+  startPointX = 0,
+  endPointX = 0
+): IParabolaForAlg => {
+  const distVertexDirectrix = (1 / 2) * (sweepLineY - focus.y);
+  const a = -(1 / (4 * distVertexDirectrix));
+  const h = focus.x;
+  const k = (focus.y + sweepLineY) / 2;
+
+  const y1 = getHorizontalParabolaY(a, startPointX, k, h);
+  const y2 = getHorizontalParabolaY(a, endPointX, k, h);
+
+  const startPoint = {
+    x: startPointX,
+    y: y1,
+  };
+
+  const endPoint = {
+    x: endPointX,
+    y: y2,
+  };
+
+  const controlPoint = getControlPointHorizontalParabola(startPoint, endPoint, focus, sweepLineY);
+
+  return {
+    focus,
+    directrixCoord: sweepLineY,
     startPoint,
     endPoint,
     controlPoint,
@@ -173,31 +239,42 @@ export const getParabolaFromEndPoints = (
   startPoint: SimplePoint,
   endPoint: SimplePoint,
   focus: Point,
-  sweepLineX: number
+  sweepLineCoord: number,
+  orientation = Orientation.Vertical
 ): IParabolaForAlgWithoutId => {
-  const controlPoint = getControlPoint(startPoint, endPoint, focus, sweepLineX);
+  let controlPoint: SimplePoint;
+  if (orientation === Orientation.Vertical) {
+    controlPoint = getControlPointVerticalParabola(startPoint, endPoint, focus, sweepLineCoord);
+  } else {
+    controlPoint = getControlPointHorizontalParabola(startPoint, endPoint, focus, sweepLineCoord);
+  }
 
   return {
     focus,
-    directrixX: sweepLineX,
+    directrixCoord: sweepLineCoord,
     startPoint,
     endPoint,
     controlPoint,
   };
 };
 
+// https://www.cuemath.com/geometry/parabola/
 const getVerticalParabolaX = (a: number, y: number, k: number, h: number) => {
   return a * (y - k) ** 2 + h;
 };
 
+const getHorizontalParabolaY = (a: number, x: number, k: number, h: number) => {
+  return a * (x - h) ** 2 + k;
+};
+
 // solves a1(y - k1)^2 + h1 = a2(y - k2)^2 + h2 and returns the point with greater y-coord first
 export const getIntersectionPointsBetweenParabolas = (p1: IParabolaForAlg, p2: IParabolaForAlg): SimplePoint[] => {
-  const distVertexDirectrix1 = (1 / 2) * (p1.directrixX - p1.focus.x);
+  const distVertexDirectrix1 = (1 / 2) * (p1.directrixCoord - p1.focus.x);
   const a1 = -(1 / (4 * distVertexDirectrix1));
-  const distVertexDirectrix2 = (1 / 2) * (p2.directrixX - p2.focus.x);
+  const distVertexDirectrix2 = (1 / 2) * (p2.directrixCoord - p2.focus.x);
   const a2 = -(1 / (4 * distVertexDirectrix2));
-  const h1 = (p1.focus.x + p1.directrixX) / 2;
-  const h2 = (p2.focus.x + p2.directrixX) / 2;
+  const h1 = (p1.focus.x + p1.directrixCoord) / 2;
+  const h2 = (p2.focus.x + p2.directrixCoord) / 2;
   const k1 = p1.focus.y;
   const k2 = p2.focus.y;
 
@@ -208,6 +285,40 @@ export const getIntersectionPointsBetweenParabolas = (p1: IParabolaForAlg, p2: I
 
   const x1 = getVerticalParabolaX(a1, y1, k1, h1);
   const x2 = getVerticalParabolaX(a2, y2, k2, h2);
+
+  return [
+    {
+      x: x1,
+      y: y1,
+    },
+    {
+      x: x2,
+      y: y2,
+    },
+  ];
+};
+
+// solves a1(x - h1)^2 + k1 = a2(x - h2)^2 + k2 and returns the point with greater x-coord first
+export const getIntersectionPointsBetweenHorizontalParabolas = (
+  p1: IParabolaForAlg,
+  p2: IParabolaForAlg
+): SimplePoint[] => {
+  const distVertexDirectrix1 = (1 / 2) * (p1.directrixCoord - p1.focus.y);
+  const a1 = -(1 / (4 * distVertexDirectrix1));
+  const distVertexDirectrix2 = (1 / 2) * (p2.directrixCoord - p2.focus.y);
+  const a2 = -(1 / (4 * distVertexDirectrix2));
+  const h1 = p1.focus.x;
+  const h2 = p2.focus.x;
+  const k1 = (p1.focus.y + p1.directrixCoord) / 2;
+  const k2 = (p2.focus.y + p2.directrixCoord) / 2;
+
+  const b = 2 * (a2 * h2 - a1 * h1);
+  const delta = b ** 2 - 4 * (a1 - a2) * (a1 * h1 ** 2 - a2 * h2 ** 2 + k1 - k2);
+  const x1 = (-b + Math.sqrt(delta)) / (2 * (a1 - a2));
+  const x2 = (-b - Math.sqrt(delta)) / (2 * (a1 - a2));
+
+  const y1 = getHorizontalParabolaY(a1, x1, k1, h1);
+  const y2 = getHorizontalParabolaY(a2, x2, k2, h2);
 
   return [
     {
@@ -254,6 +365,43 @@ export const getIntersectionBetweenRays = (ray1: ILine, ray2: ILine): SimplePoin
   const dir1 = {
     x: ray1.endPoint.x - ray1.startPoint.x,
     y: ray1.endPoint.y - ray1.startPoint.y,
+  };
+  const dir2 = {
+    x: ray2.endPoint.x - ray2.startPoint.x,
+    y: ray2.endPoint.y - ray2.startPoint.y,
+  };
+
+  // Check if the rays are parallel (= 0) or diverging (< 0)
+  const det = dir1.x * dir2.y - dir1.y * dir2.x;
+  if (det <= 0) {
+    return null;
+  }
+
+  const angle = Math.acos(
+    (dir1.x * dir2.x + dir1.y * dir2.y) / (Math.sqrt(dir1.x ** 2 + dir1.y ** 2) * Math.sqrt(dir2.x ** 2 + dir2.y ** 2))
+  );
+
+  // If angle is less than 180 degrees, rays intersect
+  if (angle < Math.PI) {
+    const t =
+      (dir2.x * (ray1.startPoint.y - ray2.startPoint.y) - dir2.y * (ray1.startPoint.x - ray2.startPoint.x)) / det;
+    const intersectionX = ray1.startPoint.x + t * dir1.x;
+    const intersectionY = ray1.startPoint.y + t * dir1.y;
+    return { x: intersectionX, y: intersectionY };
+  }
+
+  return null;
+};
+
+// it is assumed that the for first ray endPoint is the origin, for the second the startPoint is
+export const getIntersectionBetweenRaysHorizontal = (ray1: ILine, ray2: ILine): SimplePoint | null => {
+  if (ray1.startPoint.x === ray2.startPoint.x && ray1.startPoint.y === ray2.startPoint.y) {
+    return null;
+  }
+
+  const dir1 = {
+    x: ray1.startPoint.x - ray1.endPoint.x,
+    y: ray1.startPoint.y - ray1.endPoint.y,
   };
   const dir2 = {
     x: ray2.endPoint.x - ray2.startPoint.x,

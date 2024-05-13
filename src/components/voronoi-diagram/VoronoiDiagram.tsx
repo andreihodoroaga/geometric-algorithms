@@ -16,22 +16,25 @@ export default function VoronoiDiagram() {
 
   return (
     <VisualizationEngine
-      computeVisualizationSteps={computeVisualizationSteps} 
+      computeVisualizationSteps={computeVisualizationSteps}
       explanationsTitle="Fortune"
       mode={CanvasMode.points}
       minAlgorithmSpeedInMs={15}
       speedUpdateStep={4}
     >
       <Menu
-        menuButton={<Button content={orientation} dropdownBtn={true} tooltip="Orientarea dreptei de baleiere" showTooltip={true} />}
+        menuButton={
+          <Button
+            content={orientation}
+            dropdownBtn={true}
+            tooltip="Orientarea dreptei de baleiere"
+            showTooltip={true}
+          />
+        }
         transition
       >
         {Object.values(Orientation).map((or) => (
-          <MenuItem
-            key={or}
-            className={or === orientation ? "active" : ""}
-            onClick={() => setOrientation(or)}
-          >
+          <MenuItem key={or} className={or === orientation ? "active" : ""} onClick={() => setOrientation(or)}>
             {or}
           </MenuItem>
         ))}
