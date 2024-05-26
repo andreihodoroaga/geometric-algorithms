@@ -1,13 +1,25 @@
 import { Circle, Text } from "react-konva";
 import { DEFAULT_POINT_SIZE, Point } from "../../shared/models/geometry";
+import { CanvasDimensions } from "./helpers";
+
+const DEFAULT_LABEL_OFFSET = { x: 10, y: 16 };
 
 interface Props {
   point: Point;
+  canvasDimensions?: CanvasDimensions;
 }
 
 export default function PointComponent({ point }: Props) {
-  const labelPositionX = point.x + (point.labelPosition?.x ?? -10);
-  const labelPositionY = point.y + (point.labelPosition?.y ?? -16);
+  let labelPositionX = point.x + (point.labelPosition?.x ?? -DEFAULT_LABEL_OFFSET.x);
+  let labelPositionY = point.y + (point.labelPosition?.y ?? -DEFAULT_LABEL_OFFSET.y);
+
+  // when the label is outside the canvas, re-position it such that is visible
+  if (labelPositionY < 0) {
+    labelPositionX += 2 * DEFAULT_LABEL_OFFSET.x;
+    labelPositionY += DEFAULT_LABEL_OFFSET.y;
+  } else if (labelPositionX < 0) {
+    labelPositionX += DEFAULT_LABEL_OFFSET.x;
+  }
 
   return (
     <>
