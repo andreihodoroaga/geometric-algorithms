@@ -93,6 +93,12 @@ export default function Canvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldReset]);
 
+  useEffect(() => {
+    if (points.length) {
+      setShowOverlayText(false);
+    }
+  }, [points]);
+
   // Set the canvas width and height
   useEffect(() => {
     const handleResize = () => {
@@ -132,13 +138,11 @@ export default function Canvas({
       points.push(generateNextRandomPoint(20, canvasDimensions.width - 20, 20, canvasDimensions.height - 20, points));
     }
 
-    setShowOverlayText(false);
     setPoints(points);
   };
 
   const generateRandomMonotonePolygon = (type: MonotoneType = "y") => {
     const points = getRandomPointsMonotonePolygon(canvasDimensions, type);
-    setShowOverlayText(false);
     setPoints(points);
     setLines(getLinesFromPoints(points, GREY_COLOR, true));
     setClosedPolygon(true);
@@ -146,7 +150,6 @@ export default function Canvas({
 
   const generateRandomSegments = () => {
     const { points, segments } = generateRandomNonIntersectingSegments(canvasDimensions);
-    setShowOverlayText(false);
     setPoints(points);
     setLines(segments);
   };
@@ -204,7 +207,6 @@ export default function Canvas({
       return;
     }
 
-    setShowOverlayText(false);
     setPoints((prevPoints) => [...prevPoints, newPoint]);
   };
 

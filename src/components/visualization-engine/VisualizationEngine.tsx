@@ -21,12 +21,15 @@ import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import { CanvasDimensions, CanvasMode } from "../canvas/helpers";
 import Button from "@mui/material/Button";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { Tooltip } from "react-tooltip";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
 const SPEED_CONTROL_LS_KEY = "speedControl";
 
-export const RUNNING_ALGORITHM_LABEL = "Algoritmul e in desfasurare";
+const ALGORITHM_NOT_ENDED_LABEL = "Algoritmul nu e inca finalizat";
+const RESET_VIZUALIZATION = "Reporneste vizualizarea";
+const RUNNING_ALGORITHM_LABEL = "Algoritmul e in desfasurare";
 
 enum RunMode {
   Automatic = "Automat",
@@ -62,6 +65,11 @@ interface VisualizationEngineProps {
   ExplanationsExtra?: ComponentType<ExplanationsExtraProps>;
 }
 
+interface VisualizationConfiguration {
+  points: Point[];
+  lines: ILine[];
+}
+
 // A component to be used in every algorithm
 export default function VisualizationEngine({
   computeVisualizationSteps,
@@ -95,10 +103,12 @@ export default function VisualizationEngine({
       ? parseInt(localStorage.getItem(SPEED_CONTROL_LS_KEY)!)
       : speedRangeMax / 2
   );
+  const [debouncedSpeedControlValue, setDebouncedSpeedControlValue] = useState(speedControlValue);
   const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({
     width: 0,
     height: 0,
   });
+  const [savedConfiguration, setSavedConfiguration] = useState<VisualizationConfiguration | null>(null);
 
   useEffect(() => {
     if (algorithmStarted) {
@@ -109,6 +119,7 @@ export default function VisualizationEngine({
       } else {
         setCurrentStepIndex(0);
         setSteps(visualizationPointsOrError as VisualizationStep[]);
+        setSavedConfiguration({ points, lines });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -120,6 +131,7 @@ export default function VisualizationEngine({
     }
 
     if (currentStepIndex >= steps.length) {
+      setAlgorithmStarted(false);
       setVisualizationEnded(true);
       return;
     }
@@ -143,6 +155,14 @@ export default function VisualizationEngine({
     }
   }, [automaticRunInterval, visualizationEnded]);
 
+  // have to debounce speedControlValue because it creates a new setInterval every time it is updated
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSpeedControlValue(speedControlValue);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [speedControlValue]);
+
   useEffect(() => {
     if (selectedRunMode !== RunMode.Automatic) {
       return;
@@ -150,7 +170,7 @@ export default function VisualizationEngine({
 
     if (algorithmStarted && !isPaused) {
       clearInterval(automaticRunInterval);
-      const speedStepsToAdd = speedRangeMax - speedControlValue;
+      const speedStepsToAdd = speedRangeMax - debouncedSpeedControlValue;
       setAutomaticRunInterval(
         setInterval(() => {
           setCurrentStepIndex((currIdx) => currIdx! + 1);
@@ -158,7 +178,7 @@ export default function VisualizationEngine({
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [algorithmStarted, isPaused, selectedRunMode, speedControlValue]);
+  }, [algorithmStarted, isPaused, selectedRunMode, debouncedSpeedControlValue]);
 
   const addStepDrawings = (drawings: Drawing[]) => {
     for (const drawing of drawings) {
@@ -252,6 +272,24 @@ export default function VisualizationEngine({
     setLines(getLinesFromPoints(canvasPoints, GREEN_COLOR));
   };
 
+  const restartAnimation = () => {
+    if (!savedConfiguration) {
+      return;
+    }
+
+    setVisualizationEnded(false);
+    setExplanations([]);
+    setPoints(savedConfiguration.points);
+    setLines(savedConfiguration.lines);
+
+    if (selectedRunMode === RunMode.Automatic) {
+      startOrPauseAutomaticRun();
+    } else {
+      startOrNextManualRun();
+    }
+    setSavedConfiguration(null);
+  };
+
   const resetEverything = () => {
     setPoints([]);
     setLines([]);
@@ -278,11 +316,6 @@ export default function VisualizationEngine({
   };
 
   const startOrNextManualRun = () => {
-    if (visualizationEnded) {
-      resetEverything();
-      return;
-    }
-
     if (!algorithmStarted) {
       setAlgorithmStarted(true);
       return;
@@ -309,7 +342,6 @@ export default function VisualizationEngine({
   );
 
   const emptyCanvas = !points.length && !lines.length;
-  const disableResetButton = algorithmStarted && !isPaused && !visualizationEnded;
 
   return (
     <>
@@ -390,23 +422,37 @@ export default function VisualizationEngine({
               />
             </label>
           </div>
-          <div
-            className={`reset-button ${visualizationEnded ? "green" : ""}`}
-            data-tooltip-id="reset-btn-tooltip"
-            data-tooltip-content={RUNNING_ALGORITHM_LABEL}
-            data-tooltip-place="top"
-            data-tooltip-hidden={!disableResetButton}
-          >
-            <Button
-              variant="text"
-              endIcon={<RestartAltIcon />}
-              color="inherit"
-              onClick={resetEverything}
-              disabled={disableResetButton}
+
+          <div className="right-buttons">
+            <div
+              className="control-button green"
+              data-tooltip-id="reset-animation-btn-tooltip"
+              data-tooltip-content={visualizationEnded ? RESET_VIZUALIZATION : ALGORITHM_NOT_ENDED_LABEL}
+              data-tooltip-place="top"
             >
-              Reset
-            </Button>
-            <Tooltip id="reset-btn-tooltip" />
+              <Button
+                variant="text"
+                endIcon={<RestartAltIcon />}
+                color="inherit"
+                onClick={restartAnimation}
+                disabled={!visualizationEnded}
+              >
+                Replay
+              </Button>
+              <Tooltip id="reset-animation-btn-tooltip" />
+            </div>
+
+            <div className="control-button red">
+              <Button
+                variant="text"
+                endIcon={<DeleteOutlineIcon />}
+                color="inherit"
+                onClick={resetEverything}
+                disabled={emptyCanvas}
+              >
+                Clear
+              </Button>
+            </div>
           </div>
         </div>
       )}

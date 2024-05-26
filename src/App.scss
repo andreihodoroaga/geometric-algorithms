@@ -67,19 +67,27 @@
     }
   }
 
-  .reset-button {
-    color: #666;
+  .right-buttons {
+    display: flex;
 
-    &.green {
-      color: #07a17b;
-    }
+    .control-button {
+      color: #666;
 
-    button {
-      padding: 4px 12px;
-      font-size: 12px;
+      &.green {
+        color: #07a17b;
+      }
 
-      .MuiButton-endIcon {
-        margin-left: 4px;
+      &.red {
+        color: #d16d6d;
+      }
+
+      button {
+        padding: 4px 12px;
+        font-size: 12px;
+
+        .MuiButton-endIcon {
+          margin-left: 4px;
+        }
       }
     }
   }
