@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
-import { HOVERED_POINT_SIZE, ICircle, ILine, IParabola, Point } from "../../shared/models/geometry";
+import { Axis, HOVERED_POINT_SIZE, ICircle, ILine, IParabola, Point } from "../../shared/models/geometry";
 import {
   GREY_COLOR,
   distanceBetweenPoints,
@@ -27,7 +27,6 @@ import {
   CanvasMode,
   generateRandomNonIntersectingSegments,
 } from "./helpers";
-import { MonotoneType } from "../triangulation/triangulation-algorithm";
 import Parabola from "./Parabola";
 import CircleComponent from "./Circle";
 
@@ -161,7 +160,10 @@ export default function Canvas({
     setPoints(points);
   };
 
-  const generateRandomMonotonePolygon = (type: MonotoneType = "y") => {
+  const generateRandomXMonotonePolygon = () => generateRandomMonotonePolygon(Axis.x);
+  const generateRandomYMonotonePolygon = () => generateRandomMonotonePolygon(Axis.y);
+
+  const generateRandomMonotonePolygon = (type = Axis.y) => {
     const points = getRandomPointsMonotonePolygon(canvasDimensions, type);
     setPoints(points);
     setLines(getLinesFromPoints(points, GREY_COLOR, true));
@@ -210,6 +212,8 @@ export default function Canvas({
     } as Point;
   };
 
+  const isPolygonMode = () => mode === CanvasMode.xMonotonePolygon || mode === CanvasMode.yMonotonePolygon;
+
   const handleCanvasClick = (e: KonvaEventObject<MouseEvent>) => {
     if (closedPolygon || disabled) {
       return;
@@ -217,7 +221,7 @@ export default function Canvas({
 
     const newPoint = getNextPoint(e.target.getStage()!.getPointerPosition()!);
 
-    if (mode === CanvasMode.polygon && points.length > 0) {
+    if (isPolygonMode() && points.length > 0) {
       addSegmentOnCanvas(newPoint, true);
     }
     if (mode === CanvasMode.segments && points.length % 2 == 1) {
@@ -239,7 +243,7 @@ export default function Canvas({
       return;
     }
 
-    if (mode !== CanvasMode.polygon || !closedPolygon) {
+    if (!isPolygonMode() || !closedPolygon) {
       handleCanvasClick(e);
     }
 
@@ -254,10 +258,7 @@ export default function Canvas({
 
     addPointHoverEffect(e);
 
-    if (
-      (mode === CanvasMode.polygon && !closedPolygon && points.length) ||
-      (mode === CanvasMode.segments && points.length % 2)
-    ) {
+    if ((isPolygonMode() && !closedPolygon && points.length) || (mode === CanvasMode.segments && points.length % 2)) {
       setPreviewLine({
         startPoint: points[points.length - 1],
         endPoint: getPointFromSimplePoint(e.target.getStage()!.getPointerPosition()!),
@@ -321,9 +322,11 @@ export default function Canvas({
   const generateMethod =
     mode === CanvasMode.points
       ? generateRandomPoints
-      : mode === CanvasMode.polygon
-      ? generateRandomMonotonePolygon
-      : generateRandomSegments;
+      : mode === CanvasMode.segments
+      ? generateRandomSegments
+      : mode === CanvasMode.xMonotonePolygon
+      ? generateRandomXMonotonePolygon
+      : generateRandomYMonotonePolygon;
 
   return (
     <div className="canvas-component">

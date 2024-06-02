@@ -44,14 +44,23 @@ export interface ICircle {
   radius: number;
 }
 
-export type Axis = "x" | "y";
+export enum Axis {
+  x = "x",
+  y = "y",
+}
+
+export enum PointsOrientation {
+  Collinear = 0,
+  Right = 1,
+  Left = 2,
+}
 
 export const DEFAULT_POINT_SIZE = 5;
 export const HOVERED_POINT_SIZE = 5.5;
 export const FOCUSED_POINT_SIZE = 6;
 export const defaultDash = [5, 3];
 
-export const convertPointBetweenAlgorithmAndCanvas = (point: Point) => {
+export const convertPointBetweenAlgorithmAndCanvas = (point: Point): Point => {
   return {
     ...point,
     y: -point.y,
@@ -75,12 +84,14 @@ export const isPointInsideTheCanvas = (point: SimplePoint, canvasDimensions: Can
 
 // determine the position of targetPoint with respect to the oriented segment [firstPoint, endPoint]
 export const calculateOrientationForNormalPoints = (firstPoint: Point, targetPoint: Point, endPoint: Point) => {
-  // 2 = left,  1 = right, 0 = collinear
   const val =
     (targetPoint.x - firstPoint.x) * (endPoint.y - firstPoint.y) -
     (endPoint.x - firstPoint.x) * (targetPoint.y - firstPoint.y);
-  if (val == 0) return 0;
-  return val > 0 ? 2 : 1;
+
+  if (val === 0) {
+    return PointsOrientation.Collinear;
+  }
+  return val > 0 ? PointsOrientation.Left : PointsOrientation.Right;
 };
 
 // calculates the angle at B

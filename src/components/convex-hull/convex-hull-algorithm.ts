@@ -8,6 +8,7 @@ import {
   FOCUSED_POINT_SIZE,
   ILine,
   Point,
+  PointsOrientation,
   SimplePoint,
 } from "../../shared/models/geometry";
 import {
@@ -106,7 +107,7 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
       const secondLastPoint = convexHullPart[convexHullPart.length - 2];
       const lastPoint = convexHullPart[convexHullPart.length - 1];
       const orientation = calculateOrientationForNormalPoints(secondLastPoint, lastPoint, points[i]);
-      if (orientation == 2) {
+      if (orientation == PointsOrientation.Left) {
         const temporaryConvexHullPart = convexHullPart.slice();
         temporaryConvexHullPart.push(points[i]);
         const visualizationStep = {
@@ -284,7 +285,7 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
       algorithmGraphicIndications.push(visualizationStep);
 
       const orientation = calculateOrientationForNormalPoints(currentPoint, pivotPoint, testedPoint);
-      if (orientation == 1) {
+      if (orientation == PointsOrientation.Right) {
         visualizationStep = {
           explanation:
             "Punctul " +

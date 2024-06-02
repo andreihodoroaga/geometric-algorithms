@@ -1,6 +1,6 @@
-import { ILine, Point } from "../../shared/models/geometry";
+import { Axis, ILine, Point } from "../../shared/models/geometry";
 import { BLACK_COLOR, GREY_COLOR, LIGHT_GREY_COLOR, generateRandomNumber, getNextPointLetter } from "../../shared/util";
-import { MonotoneType, checkSegmentsIntersect } from "../triangulation/triangulation-algorithm";
+import { checkSegmentsIntersect } from "../triangulation/triangulation-algorithm";
 
 export type CanvasDimensions = {
   width: number;
@@ -8,7 +8,8 @@ export type CanvasDimensions = {
 };
 
 export enum CanvasMode {
-  polygon = "poligon",
+  yMonotonePolygon = "poligon y-monoton",
+  xMonotonePolygon = "poligon x-monoton",
   points = "puncte",
   segments = "segmente",
 }
@@ -103,11 +104,11 @@ export const generateNextRandomPoint = (
 // the left half of the canvas (for the y-monotone case, that is) and then some points in the right half
 // while making sure that it remains y-monotone (it does so by splitting the canvas in vertical intervals
 // and choosing a point in each such interval)
-export const getRandomPointsMonotonePolygon = (canvasDimensions: CanvasDimensions, type: MonotoneType) => {
+export const getRandomPointsMonotonePolygon = (canvasDimensions: CanvasDimensions, type: Axis) => {
   const points: Point[] = [];
 
   const lowerBound = 20;
-  const upperBound = type == "x" ? canvasDimensions.width - 20 : canvasDimensions.height - 20;
+  const upperBound = type == Axis.x ? canvasDimensions.width - 20 : canvasDimensions.height - 20;
   const pointsNum = 10;
   const intervalSize = (upperBound - lowerBound) / pointsNum;
 
@@ -132,10 +133,10 @@ export const getRandomPointsMonotonePolygon = (canvasDimensions: CanvasDimension
     const index = isFirstHalf ? i : 2 * pointsNum - 1 - i;
 
     const nextPoint = generateNextRandomPoint(
-      type == "x" ? intervalEndPoints[index] : startX,
-      type == "x" ? intervalEndPoints[index + 1] : endX,
-      type == "x" ? startY : intervalEndPoints[index],
-      type == "x" ? endY : intervalEndPoints[index + 1],
+      type == Axis.x ? intervalEndPoints[index] : startX,
+      type == Axis.x ? intervalEndPoints[index + 1] : endX,
+      type == Axis.x ? startY : intervalEndPoints[index],
+      type == Axis.x ? endY : intervalEndPoints[index + 1],
       points
     );
     points.push(nextPoint);

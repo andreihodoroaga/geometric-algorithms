@@ -1,15 +1,16 @@
+import { Axis } from "../../shared/models/geometry";
 import { generateMockPoints, mockPointsFromSimplePoints } from "../../shared/test-util";
-import { computeTriangulationSteps, leftAndRightChains } from "./triangulation-algorithm";
+import { computeTriangulationSteps, splitPolygonInChains } from "./triangulation-algorithm";
 
 describe("Triangulation algorithm", () => {
   it("should have only one step if the polygon is a triangle", () => {
     const points = generateMockPoints(3);
-    const visualizationSteps = computeTriangulationSteps(points);
+    const visualizationSteps = computeTriangulationSteps(points, Axis.y);
     expect(visualizationSteps.length).toBe(1);
   });
 
-  describe("Left and right chains", () => {
-    it("a general case", () => {
+  describe("splitPolygonInChains logic - y monotone case", () => {
+    it("general case", () => {
       const points = mockPointsFromSimplePoints([
         { x: 0, y: 8 },
         { x: 0, y: 0 },
@@ -18,7 +19,7 @@ describe("Triangulation algorithm", () => {
         { x: 4, y: 4 },
         { x: 3.5, y: 6 },
       ]);
-      const [leftChain, rightChain] = leftAndRightChains(points);
+      const [leftChain, rightChain] = splitPolygonInChains(points, Axis.y);
 
       expect(leftChain).toEqual(points.slice(0, 2));
       expect(rightChain).toEqual(points.slice(2));
@@ -32,7 +33,7 @@ describe("Triangulation algorithm", () => {
         { x: 6, y: 0 },
         { x: 8, y: 4 },
       ]);
-      const [leftChain, rightChain] = leftAndRightChains(points);
+      const [leftChain, rightChain] = splitPolygonInChains(points, Axis.y);
 
       expect(leftChain).toEqual(points.slice(0, 4));
       expect(rightChain).toEqual([points[4]]);
@@ -46,7 +47,7 @@ describe("Triangulation algorithm", () => {
         { x: 2, y: 1 },
         { x: 0, y: 4 },
       ]);
-      const [leftChain, rightChain] = leftAndRightChains(points);
+      const [leftChain, rightChain] = splitPolygonInChains(points, Axis.y);
 
       expect(leftChain).toEqual(points.slice(3));
       expect(rightChain).toEqual(points.slice(0, 3));
@@ -60,7 +61,7 @@ describe("Triangulation algorithm", () => {
         { x: 4, y: 3 },
         { x: 6, y: 1 },
       ]);
-      const [leftChain, rightChain] = leftAndRightChains(points);
+      const [leftChain, rightChain] = splitPolygonInChains(points, Axis.y);
 
       expect(leftChain).toEqual(points);
       expect(rightChain).toEqual([]);
@@ -74,7 +75,7 @@ describe("Triangulation algorithm", () => {
         { x: 12, y: 3 },
         { x: 10, y: 1 },
       ]);
-      const [leftChain, rightChain] = leftAndRightChains(points);
+      const [leftChain, rightChain] = splitPolygonInChains(points, Axis.y);
 
       expect(leftChain).toEqual([]);
       expect(rightChain).toEqual(points);

@@ -3,6 +3,7 @@ import {
   Axis,
   ILine,
   Point,
+  PointsOrientation,
   arePointsEqual,
   calculateOrientationForNormalPoints,
   convertPointBetweenAlgorithmAndCanvas,
@@ -13,18 +14,13 @@ import {
   LIGHT_GREEN_COLOR,
   ORANGE_COLOR,
   RED_COLOR,
+  comparatorPointsByXAscending,
   comparatorPointsByYDescending,
   getLinesFromPoints,
   isPointInList,
   pointsResetToInitialColor,
   sortList,
 } from "../../shared/util";
-
-export type MonotoneType = "x" | "y";
-
-export const computeTriangulationSteps = (points: Point[]) => {
-  return triangulateYMonotonePolygon(points);
-};
 
 // https://math.stackexchange.com/questions/274712/calculate-on-which-side-of-a-straight-line-is-a-given-point-located
 // 0 -> collinear, <0 -> one side, >0 -> other side
@@ -88,7 +84,7 @@ export const checkValidPolygon = (points: Point[]) => {
 };
 
 const comparePointsWithRespectToAxis = (currPoint: Point, nextPoint: Point, prevPoint: Point, axis: Axis) => {
-  if (axis === "x") {
+  if (axis === Axis.x) {
     return currPoint.x < nextPoint.x && currPoint.x < prevPoint.x;
   } else {
     return currPoint.y < nextPoint.y && currPoint.y < prevPoint.y;
@@ -115,20 +111,31 @@ export const isPolygonMonotone = (points: Point[], axis: Axis) => {
   return localMins == 1;
 };
 
+const isFirstPointGreater = (p1: Point, p2: Point, axis: Axis) => {
+  return axis === Axis.x ? p1.x > p2.x : p1.y > p2.y;
+};
+
 // assumes points are in either trigonometric or clockwise order
-export const leftAndRightChains = (points: Point[]) => {
-  // the first chain will be the left one if the points are in trigonometric order
+// first chain will be the left one for the y-monotone case and the upper one for the x-monotone case
+export const splitPolygonInChains = (points: Point[], polygonType: Axis) => {
   const firstChain: Point[] = [];
   const secondChain: Point[] = [];
-
-  const topmostPoint = points.reduce((prev, current) => (prev && prev.y > current.y ? prev : current));
-  const lowestPoint = points.reduce((prev, current) => (prev && prev.y < current.y ? prev : current));
-
-  const topmostPointIdx = points.findIndex((p) => arePointsEqual(p, topmostPoint))!;
+  // Determine the topmost and lowest points based on the polygon type
+  const greatestCoordPoint = points.reduce((prev, current) =>
+    prev && isFirstPointGreater(prev, current, polygonType) ? prev : current
+  );
+  const smallestCoordPoint = points.reduce((prev, current) =>
+    prev && !isFirstPointGreater(prev, current, polygonType) ? prev : current
+  );
+  const firstPoint = polygonType === Axis.x ? smallestCoordPoint : greatestCoordPoint;
+  const endPoint = polygonType === Axis.x ? greatestCoordPoint : smallestCoordPoint;
+  const firstPointIdx = points.findIndex((p) => arePointsEqual(p, firstPoint))!;
   let hitBottom = false;
-  firstChain.push(topmostPoint);
+
+  firstChain.push(firstPoint);
+
   for (let i = 1; i < points.length; i++) {
-    const currentIndex = (i + topmostPointIdx) % points.length;
+    const currentIndex = (i + firstPointIdx) % points.length;
 
     if (!hitBottom) {
       firstChain.push(points[currentIndex]);
@@ -136,22 +143,22 @@ export const leftAndRightChains = (points: Point[]) => {
       secondChain.push(points[currentIndex]);
     }
 
-    if (arePointsEqual(points[currentIndex], lowestPoint) && !hitBottom) {
+    if (arePointsEqual(points[currentIndex], endPoint) && !hitBottom) {
       hitBottom = true;
     }
   }
 
   // the firstChain has at least two values (the topmost and lowest points), while the secondChain can have none
-  // if the first chain is the right one (when the points are in clockwise order), swap them
+  // if the chains are not in the expected order, swap them
   if (secondChain.length) {
-    if (firstChain[1].x > secondChain[0].x) {
+    if (isFirstPointGreater(firstChain[1], secondChain[0], polygonType === Axis.x ? Axis.y : Axis.x)) {
       return [secondChain, firstChain];
     }
     return [firstChain, secondChain];
   }
-  // if the firstChain contains all points, distinguish if it should be the left or right chain
-  if (firstChain[0].x > firstChain[1].x) {
-    // the first chain is the left chain
+
+  // if the firstChain contains all points, distinguish if it should be the left/right chain (or upper/lower)
+  if (isFirstPointGreater(firstChain[0], firstChain[1], polygonType === Axis.x ? Axis.y : Axis.x)) {
     return [firstChain, secondChain];
   }
   return [secondChain, firstChain];
@@ -161,20 +168,22 @@ const isInteriorDiagonal = (
   currentPoint: Point,
   lastPointFromStack: Point,
   topOfStackPoint: Point,
-  leftChain: Point[]
+  firstChain: Point[]
 ) => {
-  const inLeftChain = isPointInList(currentPoint, leftChain) && isPointInList(lastPointFromStack, leftChain);
+  const inFirstChain = isPointInList(currentPoint, firstChain) && isPointInList(lastPointFromStack, firstChain);
   const orientation = calculateOrientationForNormalPoints(currentPoint, lastPointFromStack, topOfStackPoint);
 
-  if (inLeftChain) {
-    return orientation == 1;
+  if (inFirstChain) {
+    return orientation === PointsOrientation.Right;
   } else {
-    return orientation == 2;
+    return orientation === PointsOrientation.Left;
   }
 };
 
-const sortStepExplanation = (sortedPoints: Point[]) => {
-  let message = "Varfurile se ordoneaza descrescător după y (dacă ordinea este egală, se folosește abscisa): ";
+const sortStepExplanation = (sortedPoints: Point[], axis: Axis) => {
+  let message = `Varfurile se ordoneaza ${
+    axis === Axis.x ? "crescător" : "descrescător"
+  } după ${axis} (dacă ordinea este egală, se folosește abscisa): `;
 
   for (let i = 0; i < sortedPoints.length; i++) {
     if (i > 0) message = message + ", ";
@@ -430,7 +439,7 @@ const makeStackPointsLightGreenStep = (points: Point[], pointsStack: Point[], on
   return step;
 };
 
-const triangulateYMonotonePolygon = (points: Point[]) => {
+export const computeTriangulationSteps = (points: Point[], polygonType: Axis) => {
   const algorithmGraphicIndications: VisualizationStep[] = [];
 
   if (points.length == 3) {
@@ -438,12 +447,15 @@ const triangulateYMonotonePolygon = (points: Point[]) => {
     return algorithmGraphicIndications;
   }
 
-  let leftChain: Point[] = [];
-  let rightChain: Point[] = [];
-  [leftChain, rightChain] = leftAndRightChains(points);
+  let firstChain: Point[] = [];
+  let secondChain: Point[] = [];
+  [firstChain, secondChain] = splitPolygonInChains(points, polygonType);
 
-  const sortedPolygonPoints = sortList(points, comparatorPointsByYDescending);
-  algorithmGraphicIndications.push({ explanation: sortStepExplanation(sortedPolygonPoints) });
+  const sortedPolygonPoints = sortList(
+    points,
+    polygonType === Axis.x ? comparatorPointsByXAscending : comparatorPointsByYDescending
+  );
+  algorithmGraphicIndications.push({ explanation: sortStepExplanation(sortedPolygonPoints, polygonType) });
 
   let pointsStack = [sortedPolygonPoints[0], sortedPolygonPoints[1]];
   algorithmGraphicIndications.push(initializeStackStep(pointsStack));
@@ -452,8 +464,8 @@ const triangulateYMonotonePolygon = (points: Point[]) => {
     const currentPoint = sortedPolygonPoints[i];
 
     const inSameList =
-      (isPointInList(currentPoint, leftChain) && isPointInList(pointsStack[pointsStack.length - 1], leftChain)) ||
-      (isPointInList(currentPoint, rightChain) && isPointInList(pointsStack[pointsStack.length - 1], rightChain));
+      (isPointInList(currentPoint, firstChain) && isPointInList(pointsStack[pointsStack.length - 1], firstChain)) ||
+      (isPointInList(currentPoint, secondChain) && isPointInList(pointsStack[pointsStack.length - 1], secondChain));
     if (inSameList) {
       algorithmGraphicIndications.push(pointAndTopOfStackInSameChainStep(currentPoint, pointsStack));
 
@@ -462,7 +474,7 @@ const triangulateYMonotonePolygon = (points: Point[]) => {
 
       while (
         pointsStack.length > 0 &&
-        isInteriorDiagonal(currentPoint, lastPointFromStack, pointsStack[pointsStack.length - 1], leftChain)
+        isInteriorDiagonal(currentPoint, lastPointFromStack, pointsStack[pointsStack.length - 1], firstChain)
       ) {
         lastPointFromStack = pointsStack.pop()!;
         algorithmGraphicIndications.push(interiorDiagonalStep(pointsStack, currentPoint, lastPointFromStack));
