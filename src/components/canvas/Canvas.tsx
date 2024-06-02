@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
-import { ICircle, ILine, IParabola, Point } from "../../shared/models/geometry";
+import { HOVERED_POINT_SIZE, ICircle, ILine, IParabola, Point } from "../../shared/models/geometry";
 import {
   GREY_COLOR,
   distanceBetweenPoints,
   getLinesFromPoints,
   getNextPointLetter,
-  getPointClickedOn,
+  getTargetPoint,
   getPointFromSimplePoint,
+  DARK_GREY_COLOR,
 } from "../../shared/util";
 import "./Canvas.scss";
 import PointComponent from "./Point";
@@ -51,6 +52,24 @@ interface CanvasProps {
   onReset?: () => void;
 }
 
+const usePointHoverEffect = (points: Point[]) => {
+  const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
+
+  const addPointHoverEffect = (e: KonvaEventObject<MouseEvent>) => {
+    const pointerPosition = e.target.getStage()?.getPointerPosition();
+    const hoveredPoint = getTargetPoint(points, pointerPosition);
+    if (hoveredPoint) {
+      setHoveredPointIndex(points.indexOf(hoveredPoint));
+      document.body.style.cursor = "pointer";
+    } else {
+      setHoveredPointIndex(null);
+      document.body.style.cursor = "default";
+    }
+  };
+
+  return { addPointHoverEffect, hoveredPointIndex };
+};
+
 export default function Canvas({
   points,
   setPoints,
@@ -77,6 +96,7 @@ export default function Canvas({
   const [axesPoints, setAxesPoints] = useState<Point[]>([]);
   const [dragPoint, setDragPoint] = useState<Point | undefined>(undefined);
   const [previewLine, setPreviewLine] = useState<ILine | undefined>(undefined);
+  const { addPointHoverEffect, hoveredPointIndex } = usePointHoverEffect(points);
 
   useEffect(() => {
     if (shouldReset && onReset) {
@@ -223,7 +243,7 @@ export default function Canvas({
       handleCanvasClick(e);
     }
 
-    setDragPoint(getPointClickedOn(points, e.target.getStage()?.getPointerPosition()));
+    setDragPoint(getTargetPoint(points, e.target.getStage()?.getPointerPosition()));
     setPreviewLine(undefined);
   };
 
@@ -231,6 +251,8 @@ export default function Canvas({
     if (disabled) {
       return;
     }
+
+    addPointHoverEffect(e);
 
     if (
       (mode === CanvasMode.polygon && !closedPolygon && points.length) ||
@@ -273,7 +295,10 @@ export default function Canvas({
 
   const getPointsToShow = () => {
     const pointsToShow = originInCenter ? getCenteredPoints(points) : points;
-    return pointsToShow.map((point) => <PointComponent point={point} key={uniqueId()} />);
+    return pointsToShow.map((p, idx) => {
+      const point = idx !== hoveredPointIndex ? p : { ...p, color: DARK_GREY_COLOR, size: HOVERED_POINT_SIZE };
+      return <PointComponent point={point} key={uniqueId()} />;
+    });
   };
 
   const getCenteredLines = (lines: ILine[]) => {

@@ -19,6 +19,7 @@ export const LIGHT_GREEN_COLOR = "#52ab98";
 export const BLUE_COLOR = "#05299E";
 export const LIGHT_GREY_COLOR = "#ccc";
 export const GREY_COLOR = "#666";
+export const DARK_GREY_COLOR = "#222";
 export const BLACK_COLOR = "#444";
 
 export const generateRandomNumber = (start: number, end: number) => {
@@ -171,12 +172,13 @@ export const pointsResetToInitialColor = (points: Point[]): Drawing[] => {
   }));
 };
 
-export const getPointClickedOn = (points: Point[], clickLocation: Vector2d | null | undefined) => {
-  if (!clickLocation) {
+export const getTargetPoint = (points: Point[], cursorLocation: Vector2d | null | undefined) => {
+  if (!cursorLocation) {
     return undefined;
   }
   return points.find(
-    (p) => Math.abs(p.x - clickLocation.x) < DEFAULT_POINT_SIZE && Math.abs(p.y - clickLocation.y) < DEFAULT_POINT_SIZE
+    (p) =>
+      Math.abs(p.x - cursorLocation.x) < DEFAULT_POINT_SIZE && Math.abs(p.y - cursorLocation.y) < DEFAULT_POINT_SIZE
   );
 };
 

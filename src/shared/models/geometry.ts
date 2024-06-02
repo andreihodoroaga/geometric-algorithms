@@ -24,7 +24,6 @@ export interface ILine {
   dash?: number[];
 }
 
-// assumed to be a vertical parabola everywhere in the code
 export interface IParabola {
   startPoint: SimplePoint;
   endPoint: SimplePoint;
@@ -48,6 +47,7 @@ export interface ICircle {
 export type Axis = "x" | "y";
 
 export const DEFAULT_POINT_SIZE = 5;
+export const HOVERED_POINT_SIZE = 5.5;
 export const FOCUSED_POINT_SIZE = 6;
 export const defaultDash = [5, 3];
 
