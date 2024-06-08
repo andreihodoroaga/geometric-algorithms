@@ -31,6 +31,14 @@ export interface IParabola {
   color?: string;
 }
 
+export interface TrapezoidDrawing {
+  downLeftCorner: Point;
+  downRightCorner: Point;
+  upLeftCorner: Point;
+  upRightCorner: Point;
+  backgroundColor: string;
+}
+
 export interface IParabolaForAlg extends IParabola {
   focus: Point;
   directrixCoord: number;
@@ -49,6 +57,8 @@ export enum Axis {
   y = "y",
 }
 
+export type LeftRight = "left" | "right";
+
 export enum PointsOrientation {
   Collinear = 0,
   Right = 1,
@@ -60,7 +70,7 @@ export const HOVERED_POINT_SIZE = 5.5;
 export const FOCUSED_POINT_SIZE = 6;
 export const defaultDash = [5, 3];
 
-export const convertPointBetweenAlgorithmAndCanvas = (point: Point): Point => {
+export const convertPointBetweenAlgorithmAndCanvas = <T extends SimplePoint>(point: T): T => {
   return {
     ...point,
     y: -point.y,
@@ -83,7 +93,11 @@ export const isPointInsideTheCanvas = (point: SimplePoint, canvasDimensions: Can
 };
 
 // determine the position of targetPoint with respect to the oriented segment [firstPoint, endPoint]
-export const calculateOrientationForNormalPoints = (firstPoint: Point, targetPoint: Point, endPoint: Point) => {
+export const calculateOrientationForNormalPoints = (
+  firstPoint: SimplePoint,
+  targetPoint: SimplePoint,
+  endPoint: SimplePoint
+) => {
   const val =
     (targetPoint.x - firstPoint.x) * (endPoint.y - firstPoint.y) -
     (endPoint.x - firstPoint.x) * (targetPoint.y - firstPoint.y);

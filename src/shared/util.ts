@@ -9,9 +9,7 @@ import {
 } from "./models/geometry";
 
 export const POINT_RADIUS = 5;
-export const POINT_COORDINATE_MAX_VALUE = 50;
 export const NUMERIC_UNIT_PIXEL_SIZE = 20;
-export const CANVAS_COORDINATE_MAX_VALUE = POINT_COORDINATE_MAX_VALUE * NUMERIC_UNIT_PIXEL_SIZE;
 export const RED_COLOR = "rgb(153, 24, 24)";
 export const ORANGE_COLOR = "#FF4500";
 export const GREEN_COLOR = "green";
@@ -187,3 +185,14 @@ export const getPointFromSimplePoint = (simplePoint: SimplePoint, color?: string
   color: color ?? "",
   label: label ?? "",
 });
+
+export const getEcuationCoefficients = (firstPoint: SimplePoint, secondPoint: SimplePoint) => {
+  const coefX = secondPoint.y - firstPoint.y;
+  const coefY = firstPoint.x - secondPoint.x;
+  const coef = secondPoint.x * firstPoint.y - firstPoint.x * secondPoint.y;
+  return {
+    coefX: coefX,
+    coefY: coefY,
+    coef: coef,
+  };
+};

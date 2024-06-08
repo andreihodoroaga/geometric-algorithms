@@ -5,6 +5,7 @@ import {
   ILine,
   IParabola,
   Point,
+  TrapezoidDrawing,
   convertPointBetweenAlgorithmAndCanvas,
   convertSimplePointBetweenAlgorithmAndCanvas,
   defaultDash,
@@ -88,6 +89,7 @@ export default function VisualizationEngine({
   const [lines, setLines] = useState<ILine[]>([]);
   const [parabolas, setParabolas] = useState<IParabola[]>([]);
   const [circles, setCircles] = useState<ICircle[]>([]);
+  const [trapezoids, setTrapezoids] = useState<TrapezoidDrawing[]>([]);
   const [explanations, setExplanations] = useState<string[]>([]);
   const [algorithmStarted, setAlgorithmStarted] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
@@ -189,6 +191,7 @@ export default function VisualizationEngine({
           setLines([]);
           setParabolas([]);
           setCircles([]);
+          setTrapezoids([]);
           break;
         }
         case "updateConvexHullList": {
@@ -197,10 +200,19 @@ export default function VisualizationEngine({
           break;
         }
         case "line": {
-          let [startPoint, endPoint] = element as Point[];
-          startPoint = convertPointBetweenAlgorithmAndCanvas(startPoint);
-          endPoint = convertPointBetweenAlgorithmAndCanvas(endPoint);
-          addLine(startPoint, endPoint, color!, style === "dash");
+          handleLineStep(element, color!, style);
+          break;
+        }
+        case "segments": {
+          for (const segment of element as Point[][]) {
+            handleLineStep(segment, color!, style);
+          }
+          break;
+        }
+        case "trapezoid": {
+          setTrapezoids((oldTrapezoids) => {
+            return [...oldTrapezoids, element as TrapezoidDrawing];
+          });
           break;
         }
         case "point": {
@@ -238,6 +250,13 @@ export default function VisualizationEngine({
           break;
       }
     }
+  };
+
+  const handleLineStep = (element: Point[], color: string, style?: string) => {
+    let [startPoint, endPoint] = element as Point[];
+    startPoint = convertPointBetweenAlgorithmAndCanvas(startPoint);
+    endPoint = convertPointBetweenAlgorithmAndCanvas(endPoint);
+    addLine(startPoint, endPoint, color, style === "dash");
   };
 
   const addLine = (startPoint: Point, endPoint: Point, color: string, dash?: boolean) => {
@@ -295,6 +314,7 @@ export default function VisualizationEngine({
     setLines([]);
     setCircles([]);
     setParabolas([]);
+    setTrapezoids([]);
     setCurrentStepIndex(null);
     setExplanations([]);
     setShouldResetCanvas(true);
@@ -355,6 +375,7 @@ export default function VisualizationEngine({
           setCanvasDimensions={setCanvasDimensions}
           parabolas={parabolas}
           circles={circles}
+          trapezoids={trapezoids}
           mode={mode}
           shouldReset={shouldResetCanvas}
           onReset={() => setShouldResetCanvas(false)}

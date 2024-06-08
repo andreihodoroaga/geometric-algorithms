@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { Layer, Stage } from "react-konva";
-import { Axis, HOVERED_POINT_SIZE, ICircle, ILine, IParabola, Point } from "../../shared/models/geometry";
+import {
+  Axis,
+  HOVERED_POINT_SIZE,
+  ICircle,
+  ILine,
+  IParabola,
+  Point,
+  TrapezoidDrawing,
+} from "../../shared/models/geometry";
 import {
   GREY_COLOR,
   distanceBetweenPoints,
@@ -29,6 +37,7 @@ import {
 } from "./helpers";
 import Parabola from "./Parabola";
 import CircleComponent from "./Circle";
+import TrapezoidComponent from "./Trapezoid";
 
 interface CanvasProps {
   points: Point[];
@@ -41,6 +50,8 @@ interface CanvasProps {
   setParabolas?: React.Dispatch<React.SetStateAction<IParabola[]>>;
   circles?: ICircle[];
   setCircles?: React.Dispatch<React.SetStateAction<ICircle[]>>;
+  trapezoids?: TrapezoidDrawing[];
+  setTrapezoids?: React.Dispatch<React.SetStateAction<TrapezoidDrawing[]>>;
   mode?: CanvasMode;
   hasOverlayText?: boolean;
   axes?: boolean;
@@ -80,6 +91,8 @@ export default function Canvas({
   setParabolas,
   circles,
   setCircles,
+  trapezoids,
+  setTrapezoids,
   mode,
   hasOverlayText = true,
   axes = false,
@@ -104,6 +117,7 @@ export default function Canvas({
       setLines([]);
       setCircles?.([]);
       setParabolas?.([]);
+      setTrapezoids?.([]);
       setClosedPolygon(false);
       onReset();
       setPreviewLine(undefined);
@@ -346,6 +360,9 @@ export default function Canvas({
           ))}
           {circles?.map((circle) => (
             <CircleComponent circle={circle} key={uniqueId()} />
+          ))}
+          {trapezoids?.map((trapezoid) => (
+            <TrapezoidComponent trapezoid={trapezoid} key={uniqueId()} />
           ))}
         </Layer>
       </Stage>

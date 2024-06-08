@@ -7,6 +7,7 @@ import {
   findAngle,
   FOCUSED_POINT_SIZE,
   ILine,
+  LeftRight,
   Point,
   PointsOrientation,
   SimplePoint,
@@ -195,7 +196,7 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
   return algorithmGraphicIndications;
 };
 
-const getIndexOfExtremePoint = (pointsOnCanvas: Point[], position: "left" | "right") => {
+const getIndexOfExtremePoint = (pointsOnCanvas: Point[], position: LeftRight) => {
   let extremePoint = pointsOnCanvas[0];
   let extremePointIndex = 0;
 
