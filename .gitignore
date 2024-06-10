@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# e2e
+cypress-image-diff-screenshots/comparison
+cypress-image-diff-screenshots/diff
+cypress-image-diff-html-report

@@ -92,7 +92,8 @@ export default function Duality() {
       x: parseInt(pointX),
       y: parseInt(pointY),
       label: `(${pointX},${pointY})`,
-      color: randomColor(),
+      // the seed is mostly here for the e2e tests (they use screenshots)
+      color: randomColor({ seed: primalPoints.length * 10 }),
     };
     setPrimalPoints((points) => [...points, newPoint]);
     setExplanations((explanations) => [...explanations, getPointToLineExplanation(pointX, pointY)]);
@@ -112,7 +113,7 @@ export default function Duality() {
       x: newPointX,
       y: newPointY,
       label: `(${newPointX},${newPointY})`,
-      color: randomColor(),
+      color: randomColor({ seed: (dualPoints.length + 1) * 7 }),
     };
     setDualPoints((points) => [...points, newPoint]);
     setExplanations((explanations) => [...explanations, getLineToPointExplanation(lineX, newPointY.toString())]);
@@ -203,7 +204,7 @@ export default function Duality() {
                 ></input>
               </label>
             </div>
-            <div className="add-btn">
+            <div className="add-btn add-point">
               <Button
                 content="Add"
                 extraClass={`mini ${isFormValid(pointX, pointY) && "primary"}`}
@@ -236,7 +237,7 @@ export default function Duality() {
                 ></input>
               </label>
             </div>
-            <div className="add-btn">
+            <div className="add-btn add-line">
               <Button content="Add" extraClass={`mini ${isFormValid(lineX, lineY) && "primary"}`} onClick={addLine} />
             </div>
           </div>

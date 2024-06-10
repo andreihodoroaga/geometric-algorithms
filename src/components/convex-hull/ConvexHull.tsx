@@ -45,7 +45,15 @@ export default function ConvexHull() {
       mode={CanvasMode.points}
     >
       <Menu
-        menuButton={<Button content={selectedAlgorithm} dropdownBtn={true} tooltip="Algoritm" showTooltip={true} />}
+        menuButton={
+          <Button
+            content={selectedAlgorithm}
+            dropdownBtn={true}
+            extraClass="algorithm-selector"
+            tooltip="Algoritm"
+            showTooltip={true}
+          />
+        }
         transition
       >
         {Object.values(ConvexHullAlgorithms).map((algorithm) => (

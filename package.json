@@ -8,10 +8,12 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "test": "jest",
+    "test:e2e": "npx cypress run",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "cy:open": "cypress open"
   },
   "dependencies": {
     "@emotion/react": "^11.11.3",
@@ -41,6 +43,9 @@
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.0.3",
+    "cypress": "^13.11.0",
+    "cypress-image-diff-html-report": "^2.1.2",
+    "cypress-image-diff-js": "^2.2.1",
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
