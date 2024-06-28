@@ -19,9 +19,9 @@ const getLastStackStatus = (steps: VisualizationStep[], currentStepIndex: number
     if (currentStepIndex === steps.length) {
       return [];
     }
-    const stackStep = steps[i].graphicDrawingsStepList?.find((el) => el.type === "stackStatus");
-    if (stackStep) {
-      return stackStep.element.map((el: Point) => el.label);
+    const stackStep = steps[i].customElement;
+    if (stackStep && stackStep.type === "stackStatus") {
+      return stackStep.stackPoints.map((el: Point) => el.label);
     }
   }
   return [];

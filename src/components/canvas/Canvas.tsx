@@ -7,7 +7,7 @@ import {
   ILine,
   IParabola,
   Point,
-  TrapezoidDrawing,
+  TrapezoidForCanvas,
 } from "../../shared/models/geometry";
 import {
   GREY_COLOR,
@@ -50,8 +50,8 @@ interface CanvasProps {
   setParabolas?: React.Dispatch<React.SetStateAction<IParabola[]>>;
   circles?: ICircle[];
   setCircles?: React.Dispatch<React.SetStateAction<ICircle[]>>;
-  trapezoids?: TrapezoidDrawing[];
-  setTrapezoids?: React.Dispatch<React.SetStateAction<TrapezoidDrawing[]>>;
+  trapezoids?: TrapezoidForCanvas[];
+  setTrapezoids?: React.Dispatch<React.SetStateAction<TrapezoidForCanvas[]>>;
   mode?: CanvasMode;
   hasOverlayText?: boolean;
   axes?: boolean;

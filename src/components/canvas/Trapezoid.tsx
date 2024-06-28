@@ -1,9 +1,9 @@
 import React from "react";
 import { Shape } from "react-konva";
-import { TrapezoidDrawing } from "../../shared/models/geometry";
+import { TrapezoidForCanvas } from "../../shared/models/geometry";
 
 interface TrapezoidComponentProps {
-  trapezoid: TrapezoidDrawing;
+  trapezoid: TrapezoidForCanvas;
 }
 
 export const TrapezoidComponent: React.FC<TrapezoidComponentProps> = ({ trapezoid }) => {

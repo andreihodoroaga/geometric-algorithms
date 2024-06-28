@@ -1,6 +1,7 @@
 import { Circle, Text } from "react-konva";
-import { DEFAULT_POINT_SIZE, Point } from "../../shared/models/geometry";
+import { Point } from "../../shared/models/geometry";
 import { CanvasDimensions } from "./helpers";
+import { PointSizeMap } from "../../shared/models/algorithm";
 
 const DEFAULT_LABEL_OFFSET = { x: 10, y: 16 };
 
@@ -23,7 +24,7 @@ export default function PointComponent({ point }: Props) {
 
   return (
     <>
-      <Circle x={point.x} y={point.y} radius={point.size ?? DEFAULT_POINT_SIZE} fill={point.color} />
+      <Circle x={point.x} y={point.y} radius={point.size ?? PointSizeMap.Normal} fill={point.color} />
       <Text text={point.label} x={labelPositionX} y={labelPositionY} fill={point.color} />
     </>
   );

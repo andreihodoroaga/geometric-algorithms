@@ -1,6 +1,7 @@
 import { uniqueId } from "lodash";
-import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
+import { Drawing, DrawingFactory, VisualizationStep } from "../../shared/models/algorithm";
 import {
+  ICircle,
   ILine,
   IParabolaForAlg,
   IParabolaForAlgWithoutId,
@@ -38,11 +39,9 @@ type IVoronoiHalfEdge = ILine & {
   lowerArcId: string;
 };
 
-type CircleEvent = {
+type CircleEvent = ICircle & {
   upperHalfEdge: IVoronoiHalfEdge;
   lowerHalfEdge: IVoronoiHalfEdge;
-  center: SimplePoint;
-  radius: number;
 };
 
 const getNewParabolaWithOldId = (
@@ -538,19 +537,13 @@ const newFortuneAlgorithmStep = (
 ) => {
   const parabolaDrawings: Drawing[] = [];
   beachLine.forEach((arc) => {
-    parabolaDrawings.push({
-      type: "parabola", // some will be arcs actually, but can be represented as a (partial) parabola
-      element: arc,
-    });
+    // some will be arcs actually, but can be represented as a (partial) parabola
+    parabolaDrawings.push(DrawingFactory.parabola(arc));
   });
 
   const voronoiLineDrawings: Drawing[] = [];
   [...completeEdges, ...voronoiHalfEdges].forEach((line) => {
-    voronoiLineDrawings.push({
-      type: "line",
-      element: [line.startPoint, line.endPoint],
-      color: GREY_COLOR,
-    });
+    voronoiLineDrawings.push(DrawingFactory.line(line));
   });
 
   const circleDrawings: Drawing[] = [];
@@ -559,11 +552,7 @@ const newFortuneAlgorithmStep = (
       center: circleEvent.center,
       radius: circleEvent.radius,
     };
-    circleDrawings.push({
-      type: "circle",
-      element: circle,
-      color: GREY_COLOR,
-    });
+    circleDrawings.push(DrawingFactory.circle(circle, GREY_COLOR));
   });
 
   let startPointLine: Point;
@@ -578,14 +567,8 @@ const newFortuneAlgorithmStep = (
 
   return {
     graphicDrawingsStepList: [
-      {
-        type: "updateState",
-      },
-      {
-        type: "line",
-        element: [startPointLine, endPointLine],
-        color: GREY_COLOR,
-      },
+      DrawingFactory.clearCanvas,
+      DrawingFactory.lineFromPoints(startPointLine, endPointLine, GREY_COLOR),
       ...parabolaDrawings,
       ...voronoiLineDrawings,
       ...circleDrawings,
@@ -600,9 +583,6 @@ const cleanUpAlgorithmEnd = (visualizationSteps: VisualizationStep[]) => {
     visualizationSteps.push({
       ...lastStep,
       graphicDrawingsStepList: [
-        {
-          type: "resetEverything",
-        },
         ...(lastStep.graphicDrawingsStepList?.filter((step) => step.type !== "circle" && step.type !== "parabola") ??
           []),
       ],

@@ -1,11 +1,8 @@
 import randomColor from "randomcolor";
-import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
+import { Drawing, DrawingFactory, LineDrawing, PointDrawing, VisualizationStep } from "../../shared/models/algorithm";
 import {
   calculateOrientationForNormalPoints,
-  convertPointBetweenAlgorithmAndCanvas,
-  DEFAULT_POINT_SIZE,
   findAngle,
-  FOCUSED_POINT_SIZE,
   ILine,
   LeftRight,
   Point,
@@ -30,10 +27,28 @@ interface PartialConvexHull {
   htmlLabel: string;
 }
 
-const getFinalConvexHullPart = (partVisualizationSteps: VisualizationStep[]) => {
+const convexHullDrawingFromPoints = (points: Point[]): Drawing[] => {
+  return [
+    ...points.map((p) => DrawingFactory.point(p, GREEN_COLOR)),
+    ...getLinesFromPoints(points).map((line) =>
+      DrawingFactory.lineFromPoints(line.startPoint, line.endPoint, GREEN_COLOR)
+    ),
+  ];
+};
+
+const convexHullUpdatedSteps = (points: Point[], convexHullPoints: Point[]): Drawing[] => {
+  return [
+    DrawingFactory.clearCanvas,
+    ...pointsResetToInitialColor(points),
+    ...convexHullDrawingFromPoints(convexHullPoints),
+  ];
+};
+
+const getConvexHullPartFinalDrawings = (partVisualizationSteps: VisualizationStep[]) => {
   const lastLowerConvexHullStep = partVisualizationSteps[partVisualizationSteps.length - 1];
-  return lastLowerConvexHullStep.graphicDrawingsStepList![0].element.map((point: Point) =>
-    convertPointBetweenAlgorithmAndCanvas(point)
+  return lastLowerConvexHullStep.graphicDrawingsStepList!.filter(
+    (pointOrLine): pointOrLine is PointDrawing | LineDrawing =>
+      pointOrLine.type === "line" || (pointOrLine as PointDrawing).color === GREEN_COLOR
   );
 };
 
@@ -41,16 +56,10 @@ export const computeGrahamScanSteps = (sortedPoints: Point[]) => {
   const lowerConvexHullSteps = determineConvexHullPart(sortedPoints, "lower");
   const upperConvexHullSteps = determineConvexHullPart(sortedPoints, "upper");
 
-  const lowerConvexHull = getFinalConvexHullPart(lowerConvexHullSteps);
-  const upperConvexHull = getFinalConvexHullPart(upperConvexHullSteps);
+  // only the last steps from the lower convex hull are needed because the ones for the upper convex hull will already be there
   const lastStep: VisualizationStep = {
     explanation: "Acoperirea convexa este completa.",
-    graphicDrawingsStepList: [
-      {
-        type: "finalStep",
-        element: [...lowerConvexHull, ...upperConvexHull],
-      },
-    ],
+    graphicDrawingsStepList: getConvexHullPartFinalDrawings(lowerConvexHullSteps),
   };
 
   return [...lowerConvexHullSteps, ...upperConvexHullSteps, lastStep];
@@ -79,30 +88,16 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
       ". ";
   }
 
-  const visualizationStep = {
+  algorithmGraphicIndications.push({
     explanation: stepExplanation,
-    graphicDrawingsStepList: [
-      ...pointsResetToInitialColor(points),
-      {
-        type: "updateConvexHullList",
-        element: convexHullPart.slice(),
-      },
-    ],
-  } as VisualizationStep;
-  algorithmGraphicIndications.push(visualizationStep);
+    graphicDrawingsStepList: convexHullUpdatedSteps(points, convexHullPart),
+  });
 
   for (let i = 2; i < points.length; i++) {
-    let visualizationStep = {
+    algorithmGraphicIndications.push({
       explanation: "Punctul " + points[i].label + " este adaugat in lista.",
-      graphicDrawingsStepList: [
-        {
-          type: "point",
-          element: points[i],
-          color: ORANGE_COLOR,
-        },
-      ],
-    } as VisualizationStep;
-    algorithmGraphicIndications.push(visualizationStep);
+      graphicDrawingsStepList: [DrawingFactory.point(points[i], ORANGE_COLOR)],
+    });
 
     while (convexHullPart.length >= 2) {
       const secondLastPoint = convexHullPart[convexHullPart.length - 2];
@@ -120,12 +115,7 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
             " si " +
             points[i].label +
             " formeaza un viraj la stanga, deci niciun element nu este sters. ",
-          graphicDrawingsStepList: [
-            {
-              type: "updateConvexHullList",
-              element: temporaryConvexHullPart,
-            },
-          ],
+          graphicDrawingsStepList: convexHullUpdatedSteps(points, temporaryConvexHullPart),
         };
         algorithmGraphicIndications.push(visualizationStep);
         break;
@@ -141,33 +131,16 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
         convexHullPart.pop();
         const temporaryConvexHullPart = convexHullPart.slice();
         temporaryConvexHullPart.push(points[i]);
-        const visualizationStep = {
+
+        algorithmGraphicIndications.push({
           explanation: stepExplanation,
           graphicDrawingsStepList: [
-            {
-              type: "updateConvexHullList",
-              element: temporaryConvexHullPart,
-            },
-            {
-              type: "line",
-              element: [secondLastPoint, lastPoint],
-              style: "dash",
-              color: RED_COLOR,
-            },
-            {
-              type: "line",
-              element: [lastPoint, points[i]],
-              style: "dash",
-              color: RED_COLOR,
-            },
-            {
-              type: "point",
-              element: lastPoint,
-              color: RED_COLOR,
-            },
+            ...convexHullUpdatedSteps(points, temporaryConvexHullPart),
+            DrawingFactory.lineFromPoints(secondLastPoint, lastPoint, RED_COLOR, "dash"),
+            DrawingFactory.lineFromPoints(lastPoint, points[i], RED_COLOR, "dash"),
+            DrawingFactory.point(lastPoint, RED_COLOR),
           ],
-        };
-        algorithmGraphicIndications.push(visualizationStep);
+        });
       }
     }
     convexHullPart.push(points[i]);
@@ -175,22 +148,17 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
     let messageConvexHullList = `Frontiera ${part === "lower" ? "inferioara" : "superioara"} contine punctele `;
     for (let i = 0; i < convexHullPart.length; i++) {
       messageConvexHullList += convexHullPart[i].label;
-      if (i != convexHullPart.length - 1) {
+      if (i !== convexHullPart.length - 1) {
         messageConvexHullList += ", ";
       } else {
         messageConvexHullList += ". ";
       }
     }
-    visualizationStep = {
+
+    algorithmGraphicIndications.push({
       explanation: messageConvexHullList,
-      graphicDrawingsStepList: [
-        {
-          type: "updateConvexHullList",
-          element: convexHullPart.slice(),
-        },
-      ],
-    } as VisualizationStep;
-    algorithmGraphicIndications.push(visualizationStep);
+      graphicDrawingsStepList: convexHullUpdatedSteps(points, convexHullPart),
+    });
   }
 
   return algorithmGraphicIndications;
@@ -221,21 +189,14 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
   let currentPointIndex = leftMostPointIndex;
   let currentPoint = pointsOnCanvas[currentPointIndex];
   convexHullPoints.push(currentPoint);
-  let visualizationStep: VisualizationStep = {
+
+  algorithmGraphicIndications.push({
     explanation:
       "Acoperirea convexa se initializeaza cu cel mai mic punct in ordine lexicografica, punctul " +
       currentPoint.label +
       ". ",
-    graphicDrawingsStepList: [
-      {
-        type: "point",
-        element: currentPoint,
-        color: GREEN_COLOR,
-        size: 6,
-      },
-    ],
-  };
-  algorithmGraphicIndications.push(visualizationStep);
+    graphicDrawingsStepList: [DrawingFactory.point(currentPoint, GREEN_COLOR, "focused")],
+  });
 
   let pivotPoint;
   let pivotIndex;
@@ -250,22 +211,9 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
     let visualizationStep: VisualizationStep = {
       explanation: "Se alege arbitrar punctul " + pivotPoint.label + " drept pivot",
       graphicDrawingsStepList: [
-        {
-          type: "line",
-          element: [currentPoint, pivotPoint],
-          color: ORANGE_COLOR,
-        },
-        {
-          type: "point",
-          element: currentPoint,
-          color: GREEN_COLOR,
-        },
-        {
-          type: "point",
-          element: pivotPoint,
-          color: ORANGE_COLOR,
-          size: 6,
-        },
+        DrawingFactory.lineFromPoints(currentPoint, pivotPoint, ORANGE_COLOR),
+        DrawingFactory.point(currentPoint, GREEN_COLOR),
+        DrawingFactory.point(pivotPoint, ORANGE_COLOR, "focused"),
       ],
     };
     algorithmGraphicIndications.push(visualizationStep);
@@ -274,20 +222,13 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
       const testedPoint = pointsOnCanvas[i];
       visualizationStep = {
         explanation: "Punctul " + testedPoint.label + " este ales pentru a fi comparat",
-        graphicDrawingsStepList: [
-          {
-            type: "point",
-            element: testedPoint,
-            color: RED_COLOR,
-            size: 6,
-          },
-        ],
+        graphicDrawingsStepList: [DrawingFactory.point(testedPoint, RED_COLOR, "focused")],
       };
       algorithmGraphicIndications.push(visualizationStep);
 
       const orientation = calculateOrientationForNormalPoints(currentPoint, pivotPoint, testedPoint);
       if (orientation == PointsOrientation.Right) {
-        visualizationStep = {
+        algorithmGraphicIndications.push({
           explanation:
             "Punctul " +
             testedPoint.label +
@@ -296,33 +237,17 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
             pivotPoint.label +
             ", deci devine noul pivot. ",
           graphicDrawingsStepList: [
-            {
-              type: "updateConvexHullList",
-              element: convexHullPoints.slice(),
-            },
-            {
-              type: "line",
-              element: [currentPoint, testedPoint],
-              color: ORANGE_COLOR,
-            },
-            {
-              type: "point",
-              element: currentPoint,
-              color: GREEN_COLOR,
-            },
-            {
-              type: "point",
-              element: testedPoint,
-              color: ORANGE_COLOR,
-              size: 6,
-            },
+            ...convexHullUpdatedSteps(pointsOnCanvas, convexHullPoints),
+            DrawingFactory.lineFromPoints(currentPoint, testedPoint, ORANGE_COLOR),
+            DrawingFactory.point(currentPoint, GREEN_COLOR),
+            DrawingFactory.point(testedPoint, ORANGE_COLOR, "focused"),
           ],
-        };
-        algorithmGraphicIndications.push(visualizationStep);
+        });
+
         pivotPoint = testedPoint;
         pivotIndex = i;
       } else {
-        visualizationStep = {
+        algorithmGraphicIndications.push({
           explanation:
             "Punctul " +
             testedPoint.label +
@@ -331,29 +256,12 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
             pivotPoint.label +
             ", deci nu devine noul pivot. ",
           graphicDrawingsStepList: [
-            {
-              type: "updateConvexHullList",
-              element: convexHullPoints.slice(),
-            },
-            {
-              type: "line",
-              element: [currentPoint, pivotPoint],
-              color: ORANGE_COLOR,
-            },
-            {
-              type: "point",
-              element: currentPoint,
-              color: GREEN_COLOR,
-            },
-            {
-              type: "point",
-              element: pivotPoint,
-              color: ORANGE_COLOR,
-              size: 6,
-            },
+            ...convexHullUpdatedSteps(pointsOnCanvas, convexHullPoints),
+            DrawingFactory.lineFromPoints(currentPoint, pivotPoint, ORANGE_COLOR),
+            DrawingFactory.point(currentPoint, GREEN_COLOR),
+            DrawingFactory.point(pivotPoint, ORANGE_COLOR, "focused"),
           ],
-        };
-        algorithmGraphicIndications.push(visualizationStep);
+        });
       }
     }
 
@@ -363,16 +271,11 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
       convexHullPoints.push(pivotPoint);
       currentPoint = pivotPoint;
       currentPointIndex = pivotIndex;
-      visualizationStep = {
+
+      algorithmGraphicIndications.push({
         explanation: "Punctul " + pivotPoint.label + " se adauga in acoperirea convexa. ",
-        graphicDrawingsStepList: [
-          {
-            type: "updateConvexHullList",
-            element: convexHullPoints.slice(),
-          },
-        ],
-      };
-      algorithmGraphicIndications.push(visualizationStep);
+        graphicDrawingsStepList: convexHullUpdatedSteps(pointsOnCanvas, convexHullPoints),
+      });
     }
   }
 
@@ -386,16 +289,11 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
     }
   }
   convexHullPoints.push(convexHullPoints[0]);
-  visualizationStep = {
+
+  algorithmGraphicIndications.push({
     explanation: messageConvexHullList,
-    graphicDrawingsStepList: [
-      {
-        type: "updateConvexHullList",
-        element: convexHullPoints.slice(),
-      },
-    ],
-  };
-  algorithmGraphicIndications.push(visualizationStep);
+    graphicDrawingsStepList: convexHullDrawingFromPoints(convexHullPoints),
+  });
 
   return algorithmGraphicIndications;
 };
@@ -404,12 +302,7 @@ const chanPartialHullVisualizationSteps = (partialHulls: PartialConvexHull[]): V
   return partialHulls.map(({ points, htmlLabel }) => {
     return {
       explanation: `Se formeaza submultimea ${htmlLabel} cu ${points.length} element${points.length === 1 ? "" : "e"}.`,
-      graphicDrawingsStepList: points.map((point) => ({
-        type: "point",
-        element: point,
-        color: point.color,
-        size: DEFAULT_POINT_SIZE,
-      })),
+      graphicDrawingsStepList: points.map((point) => DrawingFactory.point(point, point.color)),
     };
   });
 };
@@ -441,8 +334,10 @@ const chanPartialHulls = (partialHullsPoints: Point[][]) => {
       // this is a hack to get the convex hull for each subset of points, a refactor would be nice
       const jarvisMarchExecutionSteps = computeJarvisMarchExecutionSteps(pointSubset);
       const pointsOnConvexHull = jarvisMarchExecutionSteps[jarvisMarchExecutionSteps.length - 1]
-        .graphicDrawingsStepList![0].element as Point[];
-      convexHullEdges = getLinesFromPoints(pointsOnConvexHull, pointsOnConvexHull[0].color);
+        .graphicDrawingsStepList!.filter((drawing) => drawing.type === "point" && drawing.color === GREEN_COLOR)
+        .map((drawing) => drawing.element) as Point[];
+
+      convexHullEdges = getLinesFromPoints(pointsOnConvexHull);
     }
 
     partialHulls.push({
@@ -458,11 +353,9 @@ const chanPartialHulls = (partialHullsPoints: Point[][]) => {
 const chanJarvisMarchVisualizationSteps = (partialHulls: PartialConvexHull[]) => {
   return partialHulls.map((partialHull) => ({
     explanation: `Este determinata infasuratoarea convexa a submultimii ${partialHull.htmlLabel} folosind Jarvis March.`,
-    graphicDrawingsStepList: partialHull.edges.map((edge) => ({
-      type: "line",
-      element: [edge.startPoint, edge.endPoint],
-      color: edge.startPoint.color,
-    })),
+    graphicDrawingsStepList: partialHull.edges.map((edge) =>
+      DrawingFactory.lineFromPoints(edge.startPoint, edge.endPoint, edge.startPoint.color)
+    ),
   }));
 };
 
@@ -479,7 +372,7 @@ const initialChanAlgorithmSteps = (partialHulls: PartialConvexHull[], points: Po
 
   result.push({
     explanation: `Multimea de puncte este partitionata aleator in submultimi cu cel mult ${m} elemente (m = ${m}).`,
-    graphicDrawingsStepList: [{ type: "updateState" }, ...pointsResetToInitialColor(points)],
+    graphicDrawingsStepList: [DrawingFactory.clearCanvas, ...pointsResetToInitialColor(points)],
   });
   result.push(...chanPartialHullVisualizationSteps(partialHulls));
   result.push(...chanJarvisMarchVisualizationSteps(partialHulls));
@@ -490,14 +383,7 @@ const initialChanAlgorithmSteps = (partialHulls: PartialConvexHull[], points: Po
 const visualizationStepMaxAnglePoint = (point: Point, startPoint: Point, endPoint: Point, subsetLabel: string) => {
   return {
     explanation: `Din submultimea ${subsetLabel}, punctul ${point.label} formeaza unghiul maxim cu punctele ${startPoint.label} si ${endPoint.label}`,
-    graphicDrawingsStepList: [
-      {
-        type: "point",
-        element: point,
-        color: RED_COLOR,
-        size: FOCUSED_POINT_SIZE,
-      },
-    ],
+    graphicDrawingsStepList: [DrawingFactory.point(point, RED_COLOR, "focused")],
   };
 };
 
@@ -516,34 +402,15 @@ const visualizationStepsMaxAngleSubsets = (
   return [
     {
       explanation: `Dintre punctele ${maxAnglePointLabelsStr}, punctul ${point.label} formeaza unghiul maxim cu punctele ${startPoint.label} si ${endPoint.label}.`,
-      graphicDrawingsStepList: [
-        {
-          type: "point",
-          element: point,
-          color: GREEN_COLOR,
-          size: FOCUSED_POINT_SIZE,
-        },
-      ],
+      graphicDrawingsStepList: [DrawingFactory.point(point, GREEN_COLOR, "focused")],
     },
     {
       explanation: `Punctul ${point.label} este adaugat in lista de puncte.`,
       graphicDrawingsStepList: [
         ...pointsResetToInitialColor(q),
-        {
-          type: "point",
-          element: endPoint,
-          color: GREEN_COLOR,
-        },
-        {
-          type: "point",
-          element: point,
-          color: GREEN_COLOR,
-        },
-        {
-          type: "line",
-          element: [endPoint, point],
-          color: GREEN_COLOR,
-        },
+        DrawingFactory.point(endPoint, GREEN_COLOR),
+        DrawingFactory.point(point, GREEN_COLOR),
+        DrawingFactory.lineFromPoints(endPoint, point, GREEN_COLOR),
       ],
     },
   ];
@@ -551,30 +418,8 @@ const visualizationStepsMaxAngleSubsets = (
 
 const chanAlgorithmInitialPointsStep = (p1: Point) => ({
   explanation: `Sunt adaugate in lista punctele P0(0, -inf) si ${p1.label} (cel mai din dreapta punct).`,
-  graphicDrawingsStepList: [
-    {
-      type: "point",
-      element: p1,
-      color: GREEN_COLOR,
-      size: FOCUSED_POINT_SIZE,
-    },
-  ],
+  graphicDrawingsStepList: [DrawingFactory.point(p1, GREEN_COLOR, "focused")],
 });
-
-const convexHullDrawingFromPoints = (points: Point[]): Drawing[] => {
-  return [
-    ...points.map((p) => ({
-      type: "point",
-      element: p,
-      color: GREEN_COLOR,
-    })),
-    ...getLinesFromPoints(points).map((line) => ({
-      type: "line",
-      element: [line.startPoint, line.endPoint],
-      color: GREEN_COLOR,
-    })),
-  ];
-};
 
 const chanSubstepFinalVisualizationComplete = (
   points: Point[],
@@ -587,7 +432,7 @@ const chanSubstepFinalVisualizationComplete = (
     },
     {
       graphicDrawingsStepList: [
-        { type: "updateState" },
+        DrawingFactory.clearCanvas,
         ...pointsResetToInitialColor(points),
         ...convexHullDrawingFromPoints(convexHullPoints),
       ],

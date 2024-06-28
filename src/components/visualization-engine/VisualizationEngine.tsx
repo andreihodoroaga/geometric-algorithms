@@ -1,17 +1,15 @@
 import { ComponentType, useEffect, useState } from "react";
 import {
-  DEFAULT_POINT_SIZE,
   ICircle,
   ILine,
   IParabola,
   Point,
-  TrapezoidDrawing,
+  TrapezoidForCanvas,
   convertPointBetweenAlgorithmAndCanvas,
   convertSimplePointBetweenAlgorithmAndCanvas,
   defaultDash,
 } from "../../shared/models/geometry";
-import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
-import { GREEN_COLOR, GREY_COLOR, getLinesFromPoints } from "../../shared/util";
+import { Drawing, PointSizeMap, VisualizationStep } from "../../shared/models/algorithm";
 import Canvas from "../canvas/Canvas";
 import Explanations from "../explanations/Explanations";
 import { default as CustomButton } from "../button/Button";
@@ -36,19 +34,6 @@ enum RunMode {
   Automatic = "Automat",
   Manual = "Manual",
 }
-
-// at each step only the green points should remain
-const clearPointsFromCanvas = (points: Point[]) => {
-  return points.map((point) =>
-    point.color === GREEN_COLOR
-      ? point
-      : {
-          ...point,
-          color: GREY_COLOR,
-          size: DEFAULT_POINT_SIZE,
-        }
-  );
-};
 
 export interface ExplanationsExtraProps {
   steps: VisualizationStep[];
@@ -89,7 +74,7 @@ export default function VisualizationEngine({
   const [lines, setLines] = useState<ILine[]>([]);
   const [parabolas, setParabolas] = useState<IParabola[]>([]);
   const [circles, setCircles] = useState<ICircle[]>([]);
-  const [trapezoids, setTrapezoids] = useState<TrapezoidDrawing[]>([]);
+  const [trapezoids, setTrapezoids] = useState<TrapezoidForCanvas[]>([]);
   const [explanations, setExplanations] = useState<string[]>([]);
   const [algorithmStarted, setAlgorithmStarted] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
@@ -184,49 +169,39 @@ export default function VisualizationEngine({
 
   const addStepDrawings = (drawings: Drawing[]) => {
     for (const drawing of drawings) {
-      const { type, element, style, color, size } = drawing;
+      const { type, element } = drawing;
 
       switch (type) {
-        case "updateState": {
+        case "clearCanvas": {
           setLines([]);
           setParabolas([]);
           setCircles([]);
           setTrapezoids([]);
           break;
         }
-        case "updateConvexHullList": {
-          setPoints((points) => clearPointsFromCanvas(points));
-          convexHullUpdatedHandler(element as Point[]);
-          break;
-        }
         case "line": {
-          handleLineStep(element, color!, style);
+          handleLineStep(element, drawing.style);
           break;
         }
-        case "segments": {
-          for (const segment of element as Point[][]) {
-            handleLineStep(segment, color!, style);
+        case "lines": {
+          for (const line of element) {
+            handleLineStep(line);
           }
           break;
         }
         case "trapezoid": {
           setTrapezoids((oldTrapezoids) => {
-            return [...oldTrapezoids, element as TrapezoidDrawing];
+            return [...oldTrapezoids, element];
           });
           break;
         }
         case "point": {
-          const canvasPoint = convertPointBetweenAlgorithmAndCanvas(element as Point);
-          updatePointStyle(canvasPoint, color!, size);
-          break;
-        }
-        case "finalStep": {
-          element.forEach((point: Point) => updatePointStyle(point, GREEN_COLOR));
-          setLines(getLinesFromPoints(element, GREEN_COLOR));
+          const canvasPoint = convertPointBetweenAlgorithmAndCanvas(element);
+          updatePointStyle(canvasPoint, drawing.color!, drawing.size);
           break;
         }
         case "parabola": {
-          let { startPoint, endPoint, controlPoint } = element as IParabola;
+          let { startPoint, endPoint, controlPoint } = element;
           startPoint = convertSimplePointBetweenAlgorithmAndCanvas(startPoint);
           endPoint = convertSimplePointBetweenAlgorithmAndCanvas(endPoint);
           controlPoint = convertSimplePointBetweenAlgorithmAndCanvas(controlPoint);
@@ -238,10 +213,9 @@ export default function VisualizationEngine({
           break;
         }
         case "circle": {
-          const circle = element as ICircle;
           const circleForCanvas = {
-            center: convertSimplePointBetweenAlgorithmAndCanvas(circle.center),
-            radius: circle.radius,
+            center: convertSimplePointBetweenAlgorithmAndCanvas(element.center),
+            radius: element.radius,
           };
           setCircles((oldCircles) => [...oldCircles, circleForCanvas]);
           break;
@@ -252,11 +226,11 @@ export default function VisualizationEngine({
     }
   };
 
-  const handleLineStep = (element: Point[], color: string, style?: string) => {
-    let [startPoint, endPoint] = element as Point[];
+  const handleLineStep = (element: ILine, style?: string) => {
+    let { startPoint, endPoint } = element;
     startPoint = convertPointBetweenAlgorithmAndCanvas(startPoint);
     endPoint = convertPointBetweenAlgorithmAndCanvas(endPoint);
-    addLine(startPoint, endPoint, color, style === "dash");
+    addLine(startPoint, endPoint, element.color, style === "dash");
   };
 
   const addLine = (startPoint: Point, endPoint: Point, color: string, dash?: boolean) => {
@@ -270,7 +244,7 @@ export default function VisualizationEngine({
   };
 
   const updatePointStyle = (point: Point, color: string, size?: number) => {
-    const newPoint = { ...point, color, size: size ?? DEFAULT_POINT_SIZE };
+    const newPoint = { ...point, color, size: size ?? PointSizeMap.Normal };
     setPoints((points) => {
       const pointIndex = points.findIndex((p) => p.label === point.label);
       const updatedPoints = [...points];
@@ -278,17 +252,6 @@ export default function VisualizationEngine({
 
       return updatedPoints;
     });
-  };
-
-  const convexHullUpdatedHandler = (newConvexHullPoints: Point[]) => {
-    const canvasPoints = [];
-    for (const point of newConvexHullPoints) {
-      const canvasPoint = convertPointBetweenAlgorithmAndCanvas(point);
-      canvasPoints.push(canvasPoint);
-      updatePointStyle(canvasPoint, GREEN_COLOR);
-    }
-
-    setLines(getLinesFromPoints(canvasPoints, GREEN_COLOR));
   };
 
   const restartAnimation = () => {

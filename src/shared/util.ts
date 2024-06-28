@@ -1,12 +1,6 @@
 import { Vector2d } from "konva/lib/types";
-import { Drawing } from "./models/algorithm";
-import {
-  DEFAULT_POINT_SIZE,
-  ILine,
-  Point,
-  SimplePoint,
-  convertPointBetweenAlgorithmAndCanvas,
-} from "./models/geometry";
+import { DrawingFactory, PointDrawing, PointSizeMap } from "./models/algorithm";
+import { ILine, Point, SimplePoint, convertPointBetweenAlgorithmAndCanvas } from "./models/geometry";
 
 export const POINT_RADIUS = 5;
 export const NUMERIC_UNIT_PIXEL_SIZE = 20;
@@ -162,12 +156,8 @@ export const shuffleArray = <T>(arr: T[]) => {
   return shuffledArr;
 };
 
-export const pointsResetToInitialColor = (points: Point[]): Drawing[] => {
-  return points.map((p) => ({
-    type: "point",
-    element: p,
-    color: p.color,
-  }));
+export const pointsResetToInitialColor = (points: Point[]): PointDrawing[] => {
+  return points.map((p) => DrawingFactory.point(p, p.color));
 };
 
 export const getTargetPoint = (points: Point[], cursorLocation: Vector2d | null | undefined) => {
@@ -176,7 +166,7 @@ export const getTargetPoint = (points: Point[], cursorLocation: Vector2d | null 
   }
   return points.find(
     (p) =>
-      Math.abs(p.x - cursorLocation.x) < DEFAULT_POINT_SIZE && Math.abs(p.y - cursorLocation.y) < DEFAULT_POINT_SIZE
+      Math.abs(p.x - cursorLocation.x) < PointSizeMap.Normal && Math.abs(p.y - cursorLocation.y) < PointSizeMap.Normal
   );
 };
 

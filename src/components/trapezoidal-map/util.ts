@@ -1,8 +1,8 @@
-import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
+import { Drawing, DrawingFactory, VisualizationStep } from "../../shared/models/algorithm";
 import {
   LeftRight,
   Point,
-  TrapezoidDrawing,
+  TrapezoidForCanvas,
   calculateOrientationForNormalPoints,
   convertPointBetweenAlgorithmAndCanvas,
 } from "../../shared/models/geometry";
@@ -34,7 +34,8 @@ export const getSegmentsFromPoints = (points: Point[]) => {
   return segments;
 };
 
-export const getTreeDataJson = (graphNode: TrapezoidalMapGraphNode) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const getTreeDataJson = (graphNode: TrapezoidalMapGraphNode): any => {
   let indicator;
   const children: Array<{ name: string | undefined; children: unknown[] | undefined }> = [];
 
@@ -213,13 +214,7 @@ export const extendPoint = (
   point.extensionBottom = bottom;
   algorithmGraphicIndications.push({
     explanation: "Se adauga extensia punctului " + point.letter,
-    graphicDrawingsStepList: [
-      {
-        type: "line",
-        element: getExtensionLine(point, canvasHeight),
-        color: "black",
-      },
-    ],
+    graphicDrawingsStepList: [DrawingFactory.line(getExtensionLine(point, canvasHeight, "black")!)],
   });
 };
 
@@ -303,10 +298,10 @@ export const divideHorizontallySameTrapezoid = (
       rightTrapezoid.count,
     graphicDrawingsStepList: [
       ...getCurrentStateOfMapSteps(endpointsOfExistingSegments, algorithmSegments, canvasHeight),
-      getTrapezoidDrawing(leftTrapezoid, canvasHeight),
-      getTrapezoidDrawing(upTrapezoid, canvasHeight),
-      getTrapezoidDrawing(downTrapezoid, canvasHeight),
-      getTrapezoidDrawing(rightTrapezoid, canvasHeight),
+      getTrapezoidForCanvas(leftTrapezoid, canvasHeight),
+      getTrapezoidForCanvas(upTrapezoid, canvasHeight),
+      getTrapezoidForCanvas(downTrapezoid, canvasHeight),
+      getTrapezoidForCanvas(rightTrapezoid, canvasHeight),
     ],
   };
   algorithmGraphicIndications.push(step);
@@ -422,13 +417,7 @@ export const updatePointExtension = (
   point.extensionBottom = bottom;
   algorithmGraphicIndications.push({
     explanation: "Se actualizeaza extensia punctului " + point.letter,
-    graphicDrawingsStepList: [
-      {
-        type: "line",
-        element: getExtensionLine(point, canvasHeight),
-        color: RED_COLOR,
-      },
-    ],
+    graphicDrawingsStepList: [DrawingFactory.line(getExtensionLine(point, canvasHeight, RED_COLOR)!)],
   });
 };
 
@@ -456,13 +445,14 @@ export const convertToNormalPoint = (trapezoidPoint: TrapezoidPoint): Point => {
 };
 
 export const convertToNormalLine = (trapezoidSegment: TrapezoidSegment) => {
-  return [
-    convertToNormalPoint(trapezoidSegment.leftSegmentPoint),
-    convertToNormalPoint(trapezoidSegment.rightSegmentPoint),
-  ];
+  return {
+    startPoint: convertToNormalPoint(trapezoidSegment.leftSegmentPoint),
+    endPoint: convertToNormalPoint(trapezoidSegment.rightSegmentPoint),
+    color: BLACK_COLOR,
+  };
 };
 
-export const getExtensionLine = (point: TrapezoidPoint, canvasHeight: number) => {
+export const getExtensionLine = (point: TrapezoidPoint, canvasHeight: number, color?: string) => {
   const verticalLineFromPoint = new TrapezoidSegment(
     new TrapezoidPoint(point.x, 1, ""),
     new TrapezoidPoint(point.x, -canvasHeight - 1, "")
@@ -471,7 +461,11 @@ export const getExtensionLine = (point: TrapezoidPoint, canvasHeight: number) =>
     const upperPointStop = getLinesIntersection(verticalLineFromPoint, point.extensionTop).point;
     const bottomPointStop = getLinesIntersection(verticalLineFromPoint, point.extensionBottom).point;
 
-    return [convertToNormalPoint(upperPointStop!), convertToNormalPoint(bottomPointStop!)];
+    return {
+      startPoint: convertToNormalPoint(upperPointStop!),
+      endPoint: convertToNormalPoint(bottomPointStop!),
+      color: color ?? BLACK_COLOR,
+    };
   }
 };
 
@@ -481,27 +475,23 @@ export const getCurrentStateOfMapSteps = (
   canvasHeight: number,
   trapezoids?: Set<Trapezoid>
 ): Drawing[] => {
-  const extensionLines = points.map((p) => getExtensionLine(p, canvasHeight));
-  const trapezoidDrawings = trapezoids ? Array.from(trapezoids).map((tr) => getTrapezoidDrawing(tr, canvasHeight)) : [];
+  const extensionLines = points.map((p) => getExtensionLine(p, canvasHeight)!);
+  const TrapezoidForCanvass = trapezoids
+    ? Array.from(trapezoids).map((tr) => getTrapezoidForCanvas(tr, canvasHeight))
+    : [];
 
   return [
-    {
-      type: "updateState",
-    },
-    {
-      type: "segments",
-      element: [...segments.map(convertToNormalLine), ...extensionLines],
-      color: BLACK_COLOR,
-    },
-    ...trapezoidDrawings,
+    DrawingFactory.clearCanvas,
+    DrawingFactory.lines([...segments.map(convertToNormalLine), ...extensionLines]),
+    ...TrapezoidForCanvass,
   ];
 };
 
-export const getTrapezoidDrawing = (
+export const getTrapezoidForCanvas = (
   trapezoid: Trapezoid,
   canvasHeight: number,
   color?: string
-): { type: "trapezoid"; element: TrapezoidDrawing } => {
+): { type: "trapezoid"; element: TrapezoidForCanvas } => {
   const trapezoidCorners = getTrapezoidCorners(trapezoid, canvasHeight);
   const downLeftCorner = convertPointBetweenAlgorithmAndCanvas(convertToNormalPoint(trapezoidCorners.downLeftCorner));
   const downRightCorner = convertPointBetweenAlgorithmAndCanvas(convertToNormalPoint(trapezoidCorners.downRightCorner));

@@ -1,10 +1,11 @@
-import { Drawing, VisualizationStep } from "../../shared/models/algorithm";
+import { Drawing, DrawingFactory, VisualizationStep } from "../../shared/models/algorithm";
 import { LeftRight, Point, calculateOrientationForNormalPoints } from "../../shared/models/geometry";
 import { BLACK_COLOR } from "../../shared/util";
 import { CanvasDimensions } from "../canvas/helpers";
 import { GraphNodeFactory, GraphTrapezoidNode, Trapezoid, TrapezoidPoint, TrapezoidSegment } from "./models";
 import {
   checkPointExistsOnCanvas,
+  convertToNormalLine,
   convertToNormalPoint,
   divideHorizontallySameTrapezoid,
   divideVerticallyFirstTrapezoid,
@@ -14,7 +15,7 @@ import {
   getCurrentStateOfMapSteps,
   getIntersectedTrapezoids,
   getSegmentsFromPoints,
-  getTrapezoidDrawing,
+  getTrapezoidForCanvas,
   getTreeDataJson,
   permuteSegments,
   setNeighbourTrapezoids,
@@ -45,19 +46,14 @@ const setBoundingBox = (algorithmGraphicIndications: VisualizationStep[], canvas
   };
   initialTrapezoid.correspondingLeaf = rootNode;
 
-  const step = {
+  algorithmGraphicIndications.push({
     explanation: "Se determina dreptunghiul initial.",
-    graphicDrawingsStepList: [
-      {
-        type: "updateState",
-      },
-      {
-        type: "graph",
-        element: getTreeDataJson(rootNode),
-      },
-    ],
-  };
-  algorithmGraphicIndications.push(step);
+    graphicDrawingsStepList: [DrawingFactory.clearCanvas],
+    customElement: {
+      type: "graph",
+      element: getTreeDataJson(rootNode),
+    },
+  });
 };
 
 export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: CanvasDimensions) => {
@@ -92,11 +88,7 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
           element: convertToNormalPoint(segment.rightSegmentPoint),
           color: BLACK_COLOR,
         },
-        {
-          type: "line",
-          element: [segment.leftSegmentPoint, segment.rightSegmentPoint],
-          color: BLACK_COLOR,
-        },
+        DrawingFactory.line(convertToNormalLine(segment)),
       ],
     };
     algorithmGraphicIndications.push(step);
@@ -117,7 +109,7 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
       if (t != intersectedTrapezoids.length - 1) {
         message += ", ";
       }
-      step.graphicDrawingsStepList?.push(getTrapezoidDrawing(trapezoid, height, "rgba(43, 103, 119, 0.25)"));
+      step.graphicDrawingsStepList?.push(getTrapezoidForCanvas(trapezoid, height, "rgba(43, 103, 119, 0.25)"));
     }
     step.explanation = message;
     algorithmGraphicIndications.push(step);
@@ -176,7 +168,7 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
         intersectedTrapezoids[0] = newTrapezoids.rightTrapezoid;
 
         messageFinal = messageFinal + newTrapezoids.leftTrapezoid.count + ", ";
-        newTrapezoidsDrawingStep.push(getTrapezoidDrawing(newTrapezoids.leftTrapezoid, height));
+        newTrapezoidsDrawingStep.push(getTrapezoidForCanvas(newTrapezoids.leftTrapezoid, height));
       }
 
       // daca rightSegmentPoint este punct nou -> divideVerticallyLastTrapezoid
@@ -195,7 +187,7 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
         intersectedTrapezoids[intersectedTrapezoids.length - 1] = newTrapezoids.leftTrapezoid;
 
         messageFinal = messageFinal + newTrapezoids.rightTrapezoid.count + ", ";
-        newTrapezoidsDrawingStep.push(getTrapezoidDrawing(newTrapezoids.rightTrapezoid, height));
+        newTrapezoidsDrawingStep.push(getTrapezoidForCanvas(newTrapezoids.rightTrapezoid, height));
       }
 
       const upTrapezoidsNodes: GraphTrapezoidNode[] = [];
@@ -251,7 +243,7 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
           upTrapezoid.correspondingLeaf = upTrapezoidalMapGraphNode;
           upTrapezoidsNodes.push(upTrapezoidalMapGraphNode);
 
-          newTrapezoidsDrawingStep.push(getTrapezoidDrawing(upTrapezoid, height));
+          newTrapezoidsDrawingStep.push(getTrapezoidForCanvas(upTrapezoid, height));
           messageFinal = messageFinal + upTrapezoid.count + ", ";
         }
 
@@ -289,7 +281,7 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
           downTrapezoid.correspondingLeaf = downTrapezoidalMapGraphNode;
           downTrapezoidsNodes.push(downTrapezoidalMapGraphNode);
 
-          newTrapezoidsDrawingStep.push(getTrapezoidDrawing(downTrapezoid, height));
+          newTrapezoidsDrawingStep.push(getTrapezoidForCanvas(downTrapezoid, height));
           messageFinal = messageFinal + downTrapezoid.count + ", ";
         }
       }
@@ -337,13 +329,9 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
       algorithmGraphicIndications.push(step);
     }
 
-    step = {
+    algorithmGraphicIndications.push({
       explanation: "Se elimina frunza corespunzatoare din structura de cautare si se creeaza noi frunze.",
       graphicDrawingsStepList: [
-        {
-          type: "graph",
-          element: getTreeDataJson(rootNode),
-        },
         ...getCurrentStateOfMapSteps(
           endpointsOfExistingSegments,
           algorithmSegments,
@@ -351,8 +339,11 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
           getAllTrapezoidsFromGraph(rootNode)
         ),
       ],
-    };
-    algorithmGraphicIndications.push(step);
+      customElement: {
+        type: "graph",
+        element: getTreeDataJson(rootNode),
+      },
+    });
   }
 
   return algorithmGraphicIndications;

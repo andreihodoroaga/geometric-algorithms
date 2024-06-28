@@ -31,7 +31,7 @@ export interface IParabola {
   color?: string;
 }
 
-export interface TrapezoidDrawing {
+export interface TrapezoidForCanvas {
   downLeftCorner: Point;
   downRightCorner: Point;
   upLeftCorner: Point;
@@ -65,9 +65,7 @@ export enum PointsOrientation {
   Left = 2,
 }
 
-export const DEFAULT_POINT_SIZE = 5;
 export const HOVERED_POINT_SIZE = 5.5;
-export const FOCUSED_POINT_SIZE = 6;
 export const defaultDash = [5, 3];
 
 export const convertPointBetweenAlgorithmAndCanvas = <T extends SimplePoint>(point: T): T => {
