@@ -27,12 +27,12 @@ const router = createBrowserRouter([
         element: <Duality />,
       },
       {
-        path: "/geometric-algorithms/trapezoidal-map",
-        element: <TrapezoidalMap />,
-      },
-      {
         path: "/geometric-algorithms/voronoi-diagram",
         element: <VoronoiDiagram />,
+      },
+      {
+        path: "/geometric-algorithms/trapezoidal-map",
+        element: <TrapezoidalMap />,
       },
     ],
   },

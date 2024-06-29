@@ -1,0 +1,56 @@
+.main-container:has(.home-container) {
+  display: block;
+  padding: 0;
+}
+
+.home-container {
+  padding: 20px;
+  text-align: center;
+  background-color: #f5f5f5;
+  height: 100%;
+}
+
+.home-container h1 {
+  font-size: 2.5rem;
+  margin-top: 54px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.home-container p {
+  font-size: 1.125rem;
+  margin-bottom: 20px;
+  padding: 0 24px;
+  color: #555;
+}
+
+.home-container .buttons-heading {
+  margin-top: 36px;
+  font-size: 1.2rem;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.nav-button {
+  display: block;
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: white;
+  background-color: #1984f7;
+  text-align: center;
+  border: none;
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.nav-button:hover {
+  background-color: #0056b3;
+}

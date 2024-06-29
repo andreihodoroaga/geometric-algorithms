@@ -39,13 +39,13 @@ export default function Navbar() {
           </NavLink>
         </li>
         <li>
-          <NavLink to={`/geometric-algorithms/trapezoidal-map`} onClick={hideAlgorithms}>
-            Harta trapezoidala
+          <NavLink to={`/geometric-algorithms/voronoi-diagram`} onClick={hideAlgorithms}>
+            Diagrama Voronoi
           </NavLink>
         </li>
         <li>
-          <NavLink to={`/geometric-algorithms/voronoi-diagram`} onClick={hideAlgorithms}>
-            Diagrama Voronoi
+          <NavLink to={`/geometric-algorithms/trapezoidal-map`} onClick={hideAlgorithms}>
+            Harta trapezoidala
           </NavLink>
         </li>
       </ul>
