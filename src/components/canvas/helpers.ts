@@ -62,7 +62,7 @@ export const getAxesBoundaryPoints = (canvasDimensions: CanvasDimensions, axisMu
   const xAxisPoint = {
     x: canvasDimensions.width - 5,
     y: canvasDimensions.height / 2,
-    label: `(${Math.floor(canvasDimensions.width / 2 / axisMultiplier)},0)`,
+    label: `(${(canvasDimensions.width / 2 / axisMultiplier).toFixed(1)},0)`,
     color: LIGHT_GREY_COLOR,
     labelPosition: {
       x: -28,
@@ -73,7 +73,7 @@ export const getAxesBoundaryPoints = (canvasDimensions: CanvasDimensions, axisMu
   const yAxisPoint = {
     x: canvasDimensions.width / 2,
     y: 5,
-    label: `(0,${Math.floor(canvasDimensions.height / 2 / axisMultiplier)})`,
+    label: `(0,${(canvasDimensions.height / 2 / axisMultiplier).toFixed(1)})`,
     color: LIGHT_GREY_COLOR,
     labelPosition: {
       x: 5,

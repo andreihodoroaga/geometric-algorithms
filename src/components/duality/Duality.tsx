@@ -9,6 +9,10 @@ import "./Duality.scss";
 import "../../shared/scss/custom-slider.scss";
 import { CanvasDimensions } from "../canvas/helpers";
 
+const MIN_AXIS_MULTIPLIER = 1;
+const MAX_AXIS_MULTIPLIER = 40;
+const BASE_AXIS_MULTIPLIER = 20;
+
 export default function Duality() {
   const [primalPoints, setPrimalPoints] = useState<Point[]>([]);
   const [dualPoints, setDualPoints] = useState<Point[]>([]);
@@ -17,7 +21,7 @@ export default function Duality() {
   const [pointY, setPointY] = useState<string>("");
   const [lineX, setLineX] = useState<string>("");
   const [lineY, setLineY] = useState<string>("");
-  const [axisMultiplier, setAxisMultiplier] = useState(10);
+  const [axisMultiplier, setAxisMultiplier] = useState(BASE_AXIS_MULTIPLIER);
   const OUT_OF_BOUNDS_X = 2000; // used to simulate an "infinite" line
   const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({
     width: 0,
@@ -92,7 +96,7 @@ export default function Duality() {
       x: parseInt(pointX),
       y: parseInt(pointY),
       label: `(${pointX},${pointY})`,
-      // the seed is mostly here for the e2e tests (they use screenshots)
+      // the seed is here mostly for the e2e tests (they use screenshots)
       color: randomColor({ seed: primalPoints.length * 10 }),
     };
     setPrimalPoints((points) => [...points, newPoint]);
@@ -123,7 +127,7 @@ export default function Duality() {
   };
 
   const parseInput = (value: string) => {
-    return value.replace(/[^-0-9]/g, "");
+    return value.replace(/[^-0-9.]/g, "");
   };
 
   const pointsScaled = (points: Point[]) =>
@@ -251,8 +255,8 @@ export default function Duality() {
             <input
               type="range"
               value={axisMultiplier}
-              min={1}
-              max={20}
+              min={MIN_AXIS_MULTIPLIER}
+              max={MAX_AXIS_MULTIPLIER}
               onChange={(e) => setAxisMultiplier(+e.target.value)}
             />
           </label>
