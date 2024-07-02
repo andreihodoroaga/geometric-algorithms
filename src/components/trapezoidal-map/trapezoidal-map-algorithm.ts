@@ -11,7 +11,6 @@ import {
   divideVerticallyFirstTrapezoid,
   divideVerticallyLastTrapezoid,
   extendPoint,
-  getAllTrapezoidsFromGraph,
   getCurrentStateOfMapSteps,
   getIntersectedTrapezoids,
   getSegmentsFromPoints,
@@ -148,9 +147,9 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
         algorithmGraphicIndications,
         height
       );
-    } else {
+    } else if (intersectedTrapezoids.length > 0) {
       const newTrapezoidsDrawingStep: Drawing[] = [];
-      let messageFinal = "Trapezele intersectate sunt eliminate sunt inlocuite cu noile trapeze ";
+      let messageFinal = "Trapezele intersectate sunt eliminate si inlocuite cu noile trapeze ";
 
       // daca leftSegmentPoint este punct nou -> divideVerticallyFirstTrapezoid
       if (!leftEndpointExistsOnCanvas) {
@@ -331,14 +330,7 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
 
     algorithmGraphicIndications.push({
       explanation: "Se elimina frunza corespunzatoare din structura de cautare si se creeaza noi frunze.",
-      graphicDrawingsStepList: [
-        ...getCurrentStateOfMapSteps(
-          endpointsOfExistingSegments,
-          algorithmSegments,
-          height,
-          getAllTrapezoidsFromGraph(rootNode)
-        ),
-      ],
+      graphicDrawingsStepList: [...getCurrentStateOfMapSteps(endpointsOfExistingSegments, algorithmSegments, height)],
       customElement: {
         type: "graph",
         element: getTreeDataJson(rootNode),

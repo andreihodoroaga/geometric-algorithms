@@ -1,0 +1,11 @@
+.main-container:has(.graph-visualizer) {
+  grid-template-areas:
+    "canvas graph panel"
+    "canvas graph explanations"
+    "controls graph _";
+  grid-template-columns: 2.25fr 1fr 1fr;
+
+  .explanations-extra {
+    grid-area: graph;
+  }
+}

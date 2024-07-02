@@ -21,6 +21,7 @@
     "@mui/icons-material": "^5.15.9",
     "@mui/material": "^5.15.7",
     "@szhsin/react-menu": "^4.0.3",
+    "d3": "^7.9.0",
     "konva": "^9.2.0",
     "localforage": "^1.10.0",
     "lodash": "^4.17.21",
@@ -35,6 +36,7 @@
     "sort-by": "^1.2.0"
   },
   "devDependencies": {
+    "@types/d3": "^7.4.3",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.14.197",
     "@types/randomcolor": "^0.5.9",

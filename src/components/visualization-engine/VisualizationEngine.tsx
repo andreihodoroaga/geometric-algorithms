@@ -441,9 +441,7 @@ export default function VisualizationEngine({
         </div>
       )}
       <div className="explanations-extra">
-        {!visualizationEnded && ExplanationsExtra && (
-          <ExplanationsExtra steps={steps} currentStepIndex={currentStepIndex} />
-        )}
+        {ExplanationsExtra && <ExplanationsExtra steps={steps} currentStepIndex={currentStepIndex} />}
       </div>
       <Snackbar
         className="error-snackbar"

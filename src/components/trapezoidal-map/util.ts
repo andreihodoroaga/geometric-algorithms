@@ -28,7 +28,7 @@ export const getSegmentsFromPoints = (points: Point[]) => {
     if (p1.x < p2.x) {
       segments.push(new TrapezoidSegment(p1, p2));
     } else {
-      segments.push(new TrapezoidSegment(p1, p2));
+      segments.push(new TrapezoidSegment(p2, p1));
     }
   }
   return segments;
@@ -158,11 +158,11 @@ export const getIntersectedTrapezoids = (
   rootNode: GraphTrapezoidNode,
   canvasDimensions: CanvasDimensions
 ) => {
-  let trapezoidOfLeftPointNode: GraphTrapezoidNode | undefined = undefined;
+  let trapezoidOfLeftPointNode: TrapezoidalMapGraphNode | undefined = undefined;
 
   const leftSegmentPoint = segment.leftSegmentPoint;
   if (checkPointExistsOnCanvas(endpointsOfExistingSegments, leftSegmentPoint)) {
-    // in caz ca se face colt in stanga cu un segment deja existente,
+    // in caz ca se face colt in stanga cu un segment deja existent,
     // din structura de cautare va rezulta un vertex, nu un trapezoid
     const proximityLineToTheRight = new TrapezoidSegment(
       new TrapezoidPoint(leftSegmentPoint.x + 0.2, -canvasDimensions.height - 1, ""),
@@ -170,17 +170,13 @@ export const getIntersectedTrapezoids = (
     );
     const intersectionPoint = getLinesIntersection(proximityLineToTheRight, segment).point;
 
-    trapezoidOfLeftPointNode = searchPointInGraph(
-      rootNode,
-      intersectionPoint!,
-      childNodesPositions
-    ) as GraphTrapezoidNode;
+    trapezoidOfLeftPointNode = searchPointInGraph(rootNode, intersectionPoint!, childNodesPositions);
   } else {
-    trapezoidOfLeftPointNode = searchPointInGraph(
-      rootNode,
-      leftSegmentPoint,
-      childNodesPositions
-    ) as GraphTrapezoidNode;
+    trapezoidOfLeftPointNode = searchPointInGraph(rootNode, leftSegmentPoint, childNodesPositions);
+  }
+
+  if (!isGraphTrapezoidNode(trapezoidOfLeftPointNode!)) {
+    return [];
   }
 
   const intersectedTrapezoids = [trapezoidOfLeftPointNode.value];
@@ -472,19 +468,14 @@ export const getExtensionLine = (point: TrapezoidPoint, canvasHeight: number, co
 export const getCurrentStateOfMapSteps = (
   points: TrapezoidPoint[],
   segments: TrapezoidSegment[],
-  canvasHeight: number,
-  trapezoids?: Set<Trapezoid>
+  canvasHeight: number
 ): Drawing[] => {
   const extensionLines = points.map((p) => getExtensionLine(p, canvasHeight)!);
-  const TrapezoidForCanvass = trapezoids
-    ? Array.from(trapezoids).map((tr) => getTrapezoidForCanvas(tr, canvasHeight))
-    : [];
+  // const TrapezoidForCanvass = trapezoids
+  //   ? Array.from(trapezoids).map((tr) => getTrapezoidForCanvas(tr, canvasHeight))
+  //   : [];
 
-  return [
-    DrawingFactory.clearCanvas,
-    DrawingFactory.lines([...segments.map(convertToNormalLine), ...extensionLines]),
-    ...TrapezoidForCanvass,
-  ];
+  return [DrawingFactory.clearCanvas, DrawingFactory.lines([...segments.map(convertToNormalLine), ...extensionLines])];
 };
 
 export const getTrapezoidForCanvas = (
