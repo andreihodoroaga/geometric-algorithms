@@ -14,10 +14,7 @@ import Canvas from "../canvas/Canvas";
 import Explanations from "../explanations/Explanations";
 import { default as CustomButton } from "../button/Button";
 import { Menu, MenuItem } from "@szhsin/react-menu";
-import Snackbar from "@mui/material/Snackbar";
 import React from "react";
-import IconButton from "@mui/material/IconButton";
-import CloseIcon from "@mui/icons-material/Close";
 import { CanvasDimensions, CanvasMode } from "../canvas/helpers";
 import Button from "@mui/material/Button";
 import { Tooltip } from "react-tooltip";
@@ -41,7 +38,7 @@ export interface ExplanationsExtraProps {
 }
 
 interface VisualizationEngineProps {
-  computeVisualizationSteps: (points: Point[], canvasDimensions: CanvasDimensions) => VisualizationStep[] | string;
+  computeVisualizationSteps: (points: Point[], canvasDimensions: CanvasDimensions) => VisualizationStep[];
   explanationsTitle: string;
   mode: CanvasMode;
   children?: React.ReactNode;
@@ -84,7 +81,6 @@ export default function VisualizationEngine({
   const [isPaused, setIsPaused] = useState(false);
   const [visualizationEnded, setVisualizationEnded] = useState(false);
   const [shouldResetCanvas, setShouldResetCanvas] = useState(false);
-  const [snackbarErrorMessage, setSnackBarErrorMessage] = useState<string | null>(null);
   const [speedControlValue, setSpeedControlValue] = useState(
     localStorage.getItem(SPEED_CONTROL_LS_KEY)
       ? parseInt(localStorage.getItem(SPEED_CONTROL_LS_KEY)!)
@@ -99,15 +95,9 @@ export default function VisualizationEngine({
 
   useEffect(() => {
     if (algorithmStarted) {
-      const visualizationPointsOrError = computeVisualizationSteps(points, canvasDimensions);
-      if (typeof visualizationPointsOrError === "string") {
-        setSnackBarErrorMessage(visualizationPointsOrError);
-        setVisualizationEnded(true);
-      } else {
-        setCurrentStepIndex(0);
-        setSteps(visualizationPointsOrError as VisualizationStep[]);
-        setSavedConfiguration({ points, lines });
-      }
+      setSteps(computeVisualizationSteps(points, canvasDimensions));
+      setCurrentStepIndex(0);
+      setSavedConfiguration({ points, lines });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [algorithmStarted]);
@@ -283,7 +273,6 @@ export default function VisualizationEngine({
     setShouldResetCanvas(true);
     setVisualizationEnded(false);
     setAlgorithmStarted(false);
-    setSnackBarErrorMessage(null);
     clearInterval(automaticRunInterval);
   };
 
@@ -311,18 +300,6 @@ export default function VisualizationEngine({
     setSpeedControlValue(newValue);
     localStorage.setItem(SPEED_CONTROL_LS_KEY, newValue.toString());
   };
-
-  const handleCloseErrorSnackbar = () => {
-    setSnackBarErrorMessage("");
-  };
-
-  const snackBarAction = (
-    <React.Fragment>
-      <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseErrorSnackbar}>
-        <CloseIcon fontSize="small" />
-      </IconButton>
-    </React.Fragment>
-  );
 
   const emptyCanvas = !points.length && !lines.length;
 
@@ -443,16 +420,6 @@ export default function VisualizationEngine({
       <div className="explanations-extra">
         {ExplanationsExtra && <ExplanationsExtra steps={steps} currentStepIndex={currentStepIndex} />}
       </div>
-      <Snackbar
-        className="error-snackbar"
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        open={!!snackbarErrorMessage}
-        onClose={handleCloseErrorSnackbar}
-        message={snackbarErrorMessage}
-        action={snackBarAction}
-        ClickAwayListenerProps={{ onClickAway: () => null }}
-        transitionDuration={200}
-      />
     </>
   );
 }

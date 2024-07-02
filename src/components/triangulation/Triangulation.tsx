@@ -33,11 +33,14 @@ export default function Triangulation() {
   // Returns the visualization steps or an error
   const computeVisualizationSteps = (points: Point[]) => {
     const pointsForAlgorithm = determinePointsForAlgorithm(points);
+    if (points.length < 3) {
+      throw new Error("Este nevoie de minim 2 puncte pentru a determina triangularea.");
+    }
     if (!checkValidPolygon(points)) {
-      return "Punctele nu formeaza un poligon valid!";
+      throw new Error("Punctele nu formeaza un poligon valid!");
     }
     if (!isPolygonMonotone(pointsForAlgorithm, selectedPolygonType)) {
-      return `Poligonul nu e ${selectedPolygonType}-monoton!`;
+      throw new Error(`Poligonul nu e ${selectedPolygonType}-monoton!`);
     }
     const visualizationSteps = computeTriangulationSteps(pointsForAlgorithm, selectedPolygonType);
     return visualizationSteps;

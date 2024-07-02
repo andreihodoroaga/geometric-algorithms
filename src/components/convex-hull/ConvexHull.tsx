@@ -27,6 +27,9 @@ export default function ConvexHull() {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState(ConvexHullAlgorithms.GrahamScan);
 
   const computeVisualizationSteps = (points: Point[]) => {
+    if (points.length < 2) {
+      throw new Error("E nevoie de minim 2 puncte!");
+    }
     const pointsForAlgorithm = determinePointsForAlgorithm(points);
 
     if (selectedAlgorithm === ConvexHullAlgorithms.GrahamScan) {
