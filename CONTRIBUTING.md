@@ -40,6 +40,18 @@ You can also add a new issue yourself with whatever you would like to see in the
 
 Make sure you have the project installed and that you are able to run it. The steps are described in the [main readme](README.md).
 
+#### Code style
+
+I used prettier with these settings for formatting (on save):
+
+```json
+{
+  "tabWidth": 2,
+  "singleQuote": false,
+  "printWidth": 120
+}
+```
+
 #### Unit tests
 
 There are unit tests for some functions throughout the app. I encourage adding unit tests for those functions that have to work well in many different scenarios (e.g., for a function determining the position of a point with respect to a segment, the tests should cover the situations where the point is on the line, above / below it, when the point is one of the end points of the segment etc.)
