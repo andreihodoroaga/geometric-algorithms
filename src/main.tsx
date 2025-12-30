@@ -7,6 +7,7 @@ import ConvexHull from "./components/convex-hull/ConvexHull.tsx";
 import Triangulation from "./components/triangulation/Triangulation.tsx";
 import TrapezoidalMap from "./components/trapezoidal-map/TrapezoidalMap.tsx";
 import VoronoiDiagram from "./components/voronoi-diagram/VoronoiDiagram.tsx";
+import { LanguageProvider } from "./shared/i18n";
 import "./index.scss";
 
 const router = createBrowserRouter([
@@ -40,6 +41,8 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <LanguageProvider>
+      <RouterProvider router={router} />
+    </LanguageProvider>
   </React.StrictMode>
 );

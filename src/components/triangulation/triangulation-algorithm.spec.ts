@@ -5,7 +5,7 @@ import { computeTriangulationSteps, splitPolygonInChains } from "./triangulation
 describe("Triangulation algorithm", () => {
   it("should have only one step if the polygon is a triangle", () => {
     const points = generateMockPoints(3);
-    const visualizationSteps = computeTriangulationSteps(points, Axis.y);
+    const visualizationSteps = computeTriangulationSteps(points, Axis.y, "en");
     expect(visualizationSteps.length).toBe(1);
   });
 

@@ -20,11 +20,17 @@ import {
   setNeighbourTrapezoids,
   updatePointExtension,
 } from "./util";
+import { Language } from "../../shared/i18n";
+import { getTranslation } from "../../shared/i18n/algorithmTranslations";
 
 let initialTrapezoid: Trapezoid;
 let rootNode: GraphTrapezoidNode;
 
-const setBoundingBox = (algorithmGraphicIndications: VisualizationStep[], canvasDimensions: CanvasDimensions) => {
+const setBoundingBox = (
+  algorithmGraphicIndications: VisualizationStep[],
+  canvasDimensions: CanvasDimensions,
+  lang: Language
+) => {
   const upLeftCorner = new TrapezoidPoint(-1, 1, "");
   const upRightCorner = new TrapezoidPoint(canvasDimensions.width + 1, 1, "");
   const downLeftCorner = new TrapezoidPoint(-1, -canvasDimensions.height - 1, "");
@@ -46,7 +52,7 @@ const setBoundingBox = (algorithmGraphicIndications: VisualizationStep[], canvas
   initialTrapezoid.correspondingLeaf = rootNode;
 
   algorithmGraphicIndications.push({
-    explanation: "Se determina dreptunghiul initial.",
+    explanation: getTranslation(lang, "determineInitialRect"),
     graphicDrawingsStepList: [DrawingFactory.clearCanvas],
     customElement: {
       type: "graph",
@@ -55,7 +61,11 @@ const setBoundingBox = (algorithmGraphicIndications: VisualizationStep[], canvas
   });
 };
 
-export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: CanvasDimensions) => {
+export const computeTrapezoidalMapSteps = (
+  points: Point[],
+  canvasDimensions: CanvasDimensions,
+  lang: Language
+) => {
   const initialSegments = getSegmentsFromPoints(points);
   const algorithmSegments: TrapezoidSegment[] = [];
   const endpointsOfExistingSegments = [];
@@ -65,7 +75,7 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
   let step: VisualizationStep;
   Trapezoid.trapezoidCount = 0;
 
-  setBoundingBox(algorithmGraphicIndications, canvasDimensions);
+  setBoundingBox(algorithmGraphicIndications, canvasDimensions, lang);
   permuteSegments(initialSegments);
 
   for (let i = 0; i < initialSegments.length; i++) {
@@ -75,7 +85,9 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
       rightSegmentPoint: segment.rightSegmentPoint,
     });
     step = {
-      explanation: "Se adauga un segment: " + segment.leftSegmentPoint.letter + segment.rightSegmentPoint.letter,
+      explanation: getTranslation(lang, "addSegment", {
+        segment: segment.leftSegmentPoint.letter + segment.rightSegmentPoint.letter,
+      }),
       graphicDrawingsStepList: [
         {
           type: "point",
@@ -99,18 +111,18 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
       rootNode,
       canvasDimensions
     );
-    let message = "Se evidentiaza trapezele care intersecteaza segmentul adaugat: ";
+    let trapezoidsList = "";
     step = { explanation: "", graphicDrawingsStepList: [] };
 
     for (let t = 0; t < intersectedTrapezoids.length; t++) {
       const trapezoid = intersectedTrapezoids[t];
-      message = message + "T" + "<sub>" + trapezoid.count + "</sub>";
+      trapezoidsList += "T" + "<sub>" + trapezoid.count + "</sub>";
       if (t != intersectedTrapezoids.length - 1) {
-        message += ", ";
+        trapezoidsList += ", ";
       }
       step.graphicDrawingsStepList?.push(getTrapezoidForCanvas(trapezoid, height, "rgba(43, 103, 119, 0.25)"));
     }
-    step.explanation = message;
+    step.explanation = getTranslation(lang, "highlightIntersected", { trapezoids: trapezoidsList });
     algorithmGraphicIndications.push(step);
 
     const leftEndpointExistsOnCanvas = checkPointExistsOnCanvas(endpointsOfExistingSegments, segment.leftSegmentPoint);
@@ -120,21 +132,22 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
     );
 
     if (intersectedTrapezoids.length == 1 && !leftEndpointExistsOnCanvas && !rightEndpointExistsOnCanvas) {
-      // cazul mai simplu: ambele puncte sunt noi si doar un trapez este intersectat
       const trapezoid = intersectedTrapezoids[0];
       extendPoint(
         segment.leftSegmentPoint,
         trapezoid.topEdge,
         trapezoid.bottomEdge,
         algorithmGraphicIndications,
-        height
+        height,
+        lang
       );
       extendPoint(
         segment.rightSegmentPoint,
         trapezoid.topEdge,
         trapezoid.bottomEdge,
         algorithmGraphicIndications,
-        height
+        height,
+        lang
       );
       endpointsOfExistingSegments.push(segment.leftSegmentPoint);
       endpointsOfExistingSegments.push(segment.rightSegmentPoint);
@@ -145,13 +158,13 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
         algorithmSegments,
         endpointsOfExistingSegments,
         algorithmGraphicIndications,
-        height
+        height,
+        lang
       );
     } else if (intersectedTrapezoids.length > 0) {
       const newTrapezoidsDrawingStep: Drawing[] = [];
-      let messageFinal = "Trapezele intersectate sunt eliminate si inlocuite cu noile trapeze ";
+      let newTrapezoidsList = "";
 
-      // daca leftSegmentPoint este punct nou -> divideVerticallyFirstTrapezoid
       if (!leftEndpointExistsOnCanvas) {
         const trapezoid = intersectedTrapezoids[0];
         extendPoint(
@@ -159,18 +172,18 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
           trapezoid.topEdge,
           trapezoid.bottomEdge,
           algorithmGraphicIndications,
-          height
+          height,
+          lang
         );
         endpointsOfExistingSegments.push(segment.leftSegmentPoint);
 
         const newTrapezoids = divideVerticallyFirstTrapezoid(trapezoid, segment);
         intersectedTrapezoids[0] = newTrapezoids.rightTrapezoid;
 
-        messageFinal = messageFinal + newTrapezoids.leftTrapezoid.count + ", ";
+        newTrapezoidsList += newTrapezoids.leftTrapezoid.count + ", ";
         newTrapezoidsDrawingStep.push(getTrapezoidForCanvas(newTrapezoids.leftTrapezoid, height));
       }
 
-      // daca rightSegmentPoint este punct nou -> divideVerticallyLastTrapezoid
       if (!rightEndpointExistsOnCanvas) {
         const trapezoid = intersectedTrapezoids[intersectedTrapezoids.length - 1];
         extendPoint(
@@ -178,14 +191,15 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
           trapezoid.topEdge,
           trapezoid.bottomEdge,
           algorithmGraphicIndications,
-          height
+          height,
+          lang
         );
         endpointsOfExistingSegments.push(segment.rightSegmentPoint);
 
         const newTrapezoids = divideVerticallyLastTrapezoid(trapezoid, segment);
         intersectedTrapezoids[intersectedTrapezoids.length - 1] = newTrapezoids.leftTrapezoid;
 
-        messageFinal = messageFinal + newTrapezoids.rightTrapezoid.count + ", ";
+        newTrapezoidsList += newTrapezoids.rightTrapezoid.count + ", ";
         newTrapezoidsDrawingStep.push(getTrapezoidForCanvas(newTrapezoids.rightTrapezoid, height));
       }
 
@@ -204,29 +218,25 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
           segment.rightSegmentPoint,
           trapezoid.rightVertex
         );
-        // orientation == 1 -> rightVertex este la dreapta segmentului
-        // orientation == 2 -> rightVertex este la stanga segmentului
 
         if (orientation == 2 || t == intersectedTrapezoids.length - 1) {
-          // actualizare extensie inferioara pentru rightVertex daca nu e ultimul trapez
           if (orientation == 2) {
             updatePointExtension(
               trapezoidRightVertex,
               trapezoidRightVertex.extensionTop,
               segment,
               algorithmGraphicIndications,
-              canvasDimensions.height
+              canvasDimensions.height,
+              lang
             );
           }
 
-          // trebuie facut un trapez in partea de sus
           const leftVertex =
             upTrapezoidsNodes.length > 0
               ? upTrapezoidsNodes[upTrapezoidsNodes.length - 1].value.rightVertex
               : segment.leftSegmentPoint;
           const upTrapezoid = new Trapezoid(trapezoid.topEdge, segment, leftVertex, trapezoidRightVertex);
 
-          // actualizez vecini
           const downLeftNeighbour =
             upTrapezoidsNodes.length > 0 ? upTrapezoidsNodes[upTrapezoidsNodes.length - 1].value : null;
           let upLeftNeighbour = trapezoid.upLeftTrapezoid;
@@ -237,34 +247,31 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
           }
           setNeighbourTrapezoids(upTrapezoid, downLeftNeighbour, null, upLeftNeighbour, trapezoid.upRightTrapezoid);
 
-          // formez nod in graf
           const upTrapezoidalMapGraphNode = GraphNodeFactory.createTrapezoid(upTrapezoid);
           upTrapezoid.correspondingLeaf = upTrapezoidalMapGraphNode;
           upTrapezoidsNodes.push(upTrapezoidalMapGraphNode);
 
           newTrapezoidsDrawingStep.push(getTrapezoidForCanvas(upTrapezoid, height));
-          messageFinal = messageFinal + upTrapezoid.count + ", ";
+          newTrapezoidsList += upTrapezoid.count + ", ";
         }
 
         if (orientation == 1 || t == intersectedTrapezoids.length - 1) {
-          // actualizare extensie superioara pentru rightVertex daca nu e ultimul trapez
           if (orientation == 1) {
             updatePointExtension(
               trapezoidRightVertex,
               segment,
               trapezoidRightVertex.extensionBottom,
               algorithmGraphicIndications,
-              canvasDimensions.height
+              canvasDimensions.height,
+              lang
             );
           }
-          // trebuie facut un trapez in partea de jos
           const leftVertex =
             downTrapezoidsNodes.length > 0
               ? downTrapezoidsNodes[downTrapezoidsNodes.length - 1].value.rightVertex
               : segment.leftSegmentPoint;
           const downTrapezoid = new Trapezoid(segment, trapezoid.bottomEdge, leftVertex, trapezoidRightVertex);
 
-          // actualizez vecini
           const upLeftNeighbour =
             downTrapezoidsNodes.length > 0 ? downTrapezoidsNodes[downTrapezoidsNodes.length - 1].value : null;
           let downLeftNeighbour = trapezoid.downLeftTrapezoid;
@@ -275,17 +282,15 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
           }
           setNeighbourTrapezoids(downTrapezoid, downLeftNeighbour, trapezoid.downRightTrapezoid, upLeftNeighbour, null);
 
-          // formez nod in graf
           const downTrapezoidalMapGraphNode = GraphNodeFactory.createTrapezoid(downTrapezoid);
           downTrapezoid.correspondingLeaf = downTrapezoidalMapGraphNode;
           downTrapezoidsNodes.push(downTrapezoidalMapGraphNode);
 
           newTrapezoidsDrawingStep.push(getTrapezoidForCanvas(downTrapezoid, height));
-          messageFinal = messageFinal + downTrapezoid.count + ", ";
+          newTrapezoidsList += downTrapezoid.count + ", ";
         }
       }
 
-      // actualizeaza structura de cautare
       let upTrapezoidsNodesIndex = 0;
       let downTrapezoidsNodesIndex = 0;
 
@@ -318,7 +323,7 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
       }
 
       step = {
-        explanation: messageFinal,
+        explanation: getTranslation(lang, "intersectedReplaced", { trapezoids: newTrapezoidsList }),
         graphicDrawingsStepList: getCurrentStateOfMapSteps(endpointsOfExistingSegments, algorithmSegments, height),
       };
 
@@ -329,7 +334,7 @@ export const computeTrapezoidalMapSteps = (points: Point[], canvasDimensions: Ca
     }
 
     algorithmGraphicIndications.push({
-      explanation: "Se elimina frunza corespunzatoare din structura de cautare si se creeaza noi frunze.",
+      explanation: getTranslation(lang, "removeLeafCreateNew"),
       graphicDrawingsStepList: [...getCurrentStateOfMapSteps(endpointsOfExistingSegments, algorithmSegments, height)],
       customElement: {
         type: "graph",

@@ -1,8 +1,12 @@
+import { useLanguage } from "../../shared/i18n";
+
 interface Props {
   elements: string[];
 }
 
 export default function Stack({ elements }: Props) {
+  const { t } = useLanguage();
+
   const stackContents = () => {
     return elements.map((el) => (
       <span key={el} className="point-label">
@@ -13,7 +17,7 @@ export default function Stack({ elements }: Props) {
 
   return (
     <div className="stack">
-      <span>Stiva:</span>
+      <span>{t("stack")}</span>
       {stackContents()}
     </div>
   );

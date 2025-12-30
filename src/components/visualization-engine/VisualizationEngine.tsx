@@ -20,17 +20,9 @@ import Button from "@mui/material/Button";
 import { Tooltip } from "react-tooltip";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import { useLanguage } from "../../shared/i18n";
 
 const SPEED_CONTROL_LS_KEY = "speedControl";
-
-const ALGORITHM_NOT_ENDED_LABEL = "Algoritmul nu e inca finalizat";
-const RESET_VIZUALIZATION = "Reporneste vizualizarea";
-const RUNNING_ALGORITHM_LABEL = "Algoritmul e in desfasurare";
-
-enum RunMode {
-  Automatic = "Automat",
-  Manual = "Manual",
-}
 
 export interface ExplanationsExtraProps {
   steps: VisualizationStep[];
@@ -53,7 +45,6 @@ interface VisualizationConfiguration {
   lines: ILine[];
 }
 
-// A component to be used in every algorithm
 export default function VisualizationEngine({
   computeVisualizationSteps,
   explanationsTitle,
@@ -66,6 +57,12 @@ export default function VisualizationEngine({
 }: VisualizationEngineProps) {
   const speedRangeMin = 0;
   const speedRangeMax = 10;
+  const { t, language } = useLanguage();
+
+  const runModes = {
+    automatic: t("automatic"),
+    manual: t("manual"),
+  };
 
   const [points, setPoints] = useState<Point[]>([]);
   const [lines, setLines] = useState<ILine[]>([]);
@@ -76,7 +73,7 @@ export default function VisualizationEngine({
   const [algorithmStarted, setAlgorithmStarted] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
   const [steps, setSteps] = useState<VisualizationStep[]>([]);
-  const [selectedRunMode, setSelectedRunMode] = useState<RunMode>(RunMode.Automatic);
+  const [selectedRunMode, setSelectedRunMode] = useState<string>(runModes.automatic);
   const [automaticRunInterval, setAutomaticRunInterval] = useState<NodeJS.Timeout>();
   const [isPaused, setIsPaused] = useState(false);
   const [visualizationEnded, setVisualizationEnded] = useState(false);
@@ -92,6 +89,15 @@ export default function VisualizationEngine({
     height: 0,
   });
   const [savedConfiguration, setSavedConfiguration] = useState<VisualizationConfiguration | null>(null);
+
+  // Update run mode label when language changes
+  useEffect(() => {
+    if (selectedRunMode === t("automatic") || selectedRunMode === t("manual")) {
+      return;
+    }
+    // If current selection doesn't match translated values, update it
+    setSelectedRunMode(t("automatic"));
+  }, [language, t, selectedRunMode]);
 
   useEffect(() => {
     if (algorithmStarted) {
@@ -141,7 +147,8 @@ export default function VisualizationEngine({
   }, [speedControlValue]);
 
   useEffect(() => {
-    if (selectedRunMode !== RunMode.Automatic) {
+    const isAutomatic = selectedRunMode === t("automatic");
+    if (!isAutomatic) {
       return;
     }
 
@@ -155,7 +162,7 @@ export default function VisualizationEngine({
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [algorithmStarted, isPaused, selectedRunMode, debouncedSpeedControlValue]);
+  }, [algorithmStarted, isPaused, selectedRunMode, debouncedSpeedControlValue, language]);
 
   const addStepDrawings = (drawings: Drawing[]) => {
     for (const drawing of drawings) {
@@ -254,7 +261,7 @@ export default function VisualizationEngine({
     setPoints(savedConfiguration.points);
     setLines(savedConfiguration.lines);
 
-    if (selectedRunMode === RunMode.Automatic) {
+    if (selectedRunMode === t("automatic")) {
       startOrPauseAutomaticRun();
     } else {
       startOrNextManualRun();
@@ -302,6 +309,13 @@ export default function VisualizationEngine({
   };
 
   const emptyCanvas = !points.length && !lines.length;
+  const isAutomatic = selectedRunMode === t("automatic");
+
+  const getButtonContent = () => {
+    if (visualizationEnded) return t("finished");
+    if (!algorithmStarted || isPaused) return t("start");
+    return isAutomatic ? t("pause") : t("next");
+  };
 
   return (
     <>
@@ -332,14 +346,14 @@ export default function VisualizationEngine({
             <CustomButton
               content={selectedRunMode}
               dropdownBtn={true}
-              tooltip={!algorithmStarted ? "Mod executie" : RUNNING_ALGORITHM_LABEL}
+              tooltip={!algorithmStarted ? t("executionMode") : t("runningAlgorithm")}
               showTooltip={true}
               disabled={algorithmStarted}
             />
           }
           transition
         >
-          {Object.values(RunMode).map((runMode) => (
+          {Object.values(runModes).map((runMode) => (
             <MenuItem
               key={runMode}
               className={runMode === selectedRunMode ? "active" : ""}
@@ -349,22 +363,22 @@ export default function VisualizationEngine({
             </MenuItem>
           ))}
         </Menu>
-        {selectedRunMode === RunMode.Automatic ? (
+        {isAutomatic ? (
           <CustomButton
             onClick={() => startOrPauseAutomaticRun()}
             disabled={emptyCanvas || visualizationEnded}
-            content={visualizationEnded ? "Finalizat" : !algorithmStarted || isPaused ? "Start" : "Pause"}
+            content={getButtonContent()}
             extraClass="primary"
-            tooltip="Mai intai adauga puncte"
+            tooltip={t("addPointsFirst")}
             showTooltip={emptyCanvas}
           />
         ) : (
           <CustomButton
             onClick={() => startOrNextManualRun()}
             disabled={emptyCanvas || visualizationEnded}
-            content={visualizationEnded ? "Finalizat" : !algorithmStarted ? "Start" : "Next"}
+            content={visualizationEnded ? t("finished") : !algorithmStarted ? t("start") : t("next")}
             extraClass="primary"
-            tooltip="Mai intai adauga puncte"
+            tooltip={t("addPointsFirst")}
             showTooltip={emptyCanvas}
           />
         )}
@@ -373,7 +387,7 @@ export default function VisualizationEngine({
         <div className="controls">
           <div className="slider speed-slider">
             <label>
-              Viteza:
+              {t("speed")}
               <input
                 type="range"
                 value={speedControlValue}
@@ -388,7 +402,7 @@ export default function VisualizationEngine({
             <div
               className="control-button green"
               data-tooltip-id="reset-animation-btn-tooltip"
-              data-tooltip-content={visualizationEnded ? RESET_VIZUALIZATION : ALGORITHM_NOT_ENDED_LABEL}
+              data-tooltip-content={visualizationEnded ? t("resetVisualization") : t("algorithmNotEnded")}
               data-tooltip-place="top"
             >
               <Button
@@ -398,7 +412,7 @@ export default function VisualizationEngine({
                 onClick={restartAnimation}
                 disabled={!visualizationEnded}
               >
-                Replay
+                {t("replay")}
               </Button>
               <Tooltip id="reset-animation-btn-tooltip" />
             </div>
@@ -411,7 +425,7 @@ export default function VisualizationEngine({
                 onClick={resetEverything}
                 disabled={emptyCanvas}
               >
-                Clear
+                {t("clear")}
               </Button>
             </div>
           </div>

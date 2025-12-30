@@ -27,6 +27,8 @@ import {
   sortList,
 } from "../../shared/util";
 import { CanvasDimensions } from "../canvas/helpers";
+import { Language } from "../../shared/i18n";
+import { getTranslation } from "../../shared/i18n/algorithmTranslations";
 
 export enum Orientation {
   Vertical = "Verticala",
@@ -231,6 +233,7 @@ const addCircleEvents = (
   beachLine: IParabolaForAlg[],
   voronoiHalfEdges: IVoronoiHalfEdge[],
   stepExplanations: string[],
+  lang: Language,
   orientation = Orientation.Vertical
 ) => {
   for (let i = 1; i < beachLine.length - 1; i++) {
@@ -265,7 +268,7 @@ const addCircleEvents = (
       beachLine[middleArcIdx].color = ORANGE_COLOR;
 
       circleEvents.push(circleEvent);
-      stepExplanations.push(circleEventDetectedExplanation([...beachLine], i));
+      stepExplanations.push(circleEventDetectedExplanation([...beachLine], i, lang));
     }
   }
 };
@@ -277,6 +280,7 @@ const handleCircleEvents = (
   completeEdges: ILine[],
   sweepLineCoord: number,
   stepExplanations: string[],
+  lang: Language,
   orientation = Orientation.Vertical
 ) => {
   for (let i = 0; i < circleEvents.length; i++) {
@@ -328,7 +332,7 @@ const handleCircleEvents = (
         upperArcId: circleEvents[i].upperHalfEdge.upperArcId,
         lowerArcId: circleEvents[i].lowerHalfEdge.lowerArcId,
       });
-      stepExplanations.push(circleEventCompletedExplanation(beachLine[arcToRemoveIdx]));
+      stepExplanations.push(circleEventCompletedExplanation(beachLine[arcToRemoveIdx], lang));
       beachLine.splice(arcToRemoveIdx, 1);
     }
   }
@@ -514,16 +518,18 @@ const arcToBeRemovedIdx = (beachLine: IParabolaForAlg[], circleEvent: CircleEven
   ); // the two id's we are checking against arc.id should be equal by definition, but doesn't hurt to do an extra check
 };
 
-const siteEventExplanation = (parabola: IParabolaForAlg) =>
-  `Eveniment de tip locatie: se adauga parabola punctului ${parabola.focus.label}.`;
+const siteEventExplanation = (parabola: IParabolaForAlg, lang: Language) =>
+  getTranslation(lang, "siteEvent", { point: parabola.focus.label });
 
-const circleEventDetectedExplanation = (beachLine: IParabolaForAlg[], i: number) =>
-  `Eveniment de tip cerc detectat: se adauga cercul asociat muchiilor formate de parabolele punctelor ${
-    beachLine[i - 1].focus.label
-  } si ${beachLine[i].focus.label}, respectiv ${beachLine[i].focus.label} si ${beachLine[i + 1].focus.label}.`;
+const circleEventDetectedExplanation = (beachLine: IParabolaForAlg[], i: number, lang: Language) =>
+  getTranslation(lang, "circleEventDetected", {
+    p1: beachLine[i - 1].focus.label,
+    p2: beachLine[i].focus.label,
+    p3: beachLine[i + 1].focus.label,
+  });
 
-const circleEventCompletedExplanation = (parabolaToBeRemoved: IParabolaForAlg) =>
-  `Eveniment de tip cerc complet: dispare parabola asociata punctului ${parabolaToBeRemoved.focus.label} si apare un varf al diagramei.`;
+const circleEventCompletedExplanation = (parabolaToBeRemoved: IParabolaForAlg, lang: Language) =>
+  getTranslation(lang, "circleEventCompleted", { point: parabolaToBeRemoved.focus.label });
 
 const newFortuneAlgorithmStep = (
   beachLine: IParabolaForAlg[],
@@ -577,7 +583,7 @@ const newFortuneAlgorithmStep = (
   };
 };
 
-const cleanUpAlgorithmEnd = (visualizationSteps: VisualizationStep[]) => {
+const cleanUpAlgorithmEnd = (visualizationSteps: VisualizationStep[], lang: Language) => {
   if (visualizationSteps.length >= 1) {
     const lastStep = visualizationSteps[visualizationSteps.length - 1];
     visualizationSteps.push({
@@ -586,7 +592,7 @@ const cleanUpAlgorithmEnd = (visualizationSteps: VisualizationStep[]) => {
         ...(lastStep.graphicDrawingsStepList?.filter((step) => step.type !== "circle" && step.type !== "parabola") ??
           []),
       ],
-      explanation: "Algoritm finalizat",
+      explanation: getTranslation(lang, "algorithmFinished"),
     });
   }
 };
@@ -594,17 +600,19 @@ const cleanUpAlgorithmEnd = (visualizationSteps: VisualizationStep[]) => {
 export const computeFortuneAlgorithmSteps = (
   points: Point[],
   canvasDimensions: CanvasDimensions,
-  orientation: Orientation
+  orientation: Orientation,
+  lang: Language = "en"
 ) => {
   if (orientation === Orientation.Vertical) {
-    return computeFortuneAlgorithmStepsVerticalLineSweep(points, canvasDimensions);
+    return computeFortuneAlgorithmStepsVerticalLineSweep(points, canvasDimensions, lang);
   }
-  return computeFortuneAlgorithmStepsHorizontalLineSweep(points, canvasDimensions);
+  return computeFortuneAlgorithmStepsHorizontalLineSweep(points, canvasDimensions, lang);
 };
 
 export const computeFortuneAlgorithmStepsHorizontalLineSweep = (
   points: Point[],
-  canvasDimensions: CanvasDimensions
+  canvasDimensions: CanvasDimensions,
+  lang: Language
 ) => {
   const visualizationSteps: VisualizationStep[] = [];
   const beachLine: IParabolaForAlg[] = [];
@@ -634,7 +642,7 @@ export const computeFortuneAlgorithmStepsHorizontalLineSweep = (
       if (lastPointPassedIdx == 0) {
         const firstParabola = getParabolaFromXCoordinates(sortedPoints[0], sweepLineY, 0, canvasDimensions.width);
         beachLine.push(firstParabola);
-        stepExplanations.push(siteEventExplanation(firstParabola));
+        stepExplanations.push(siteEventExplanation(firstParabola, lang));
       } else {
         const newParabola = getParabolaFromXCoordinates(
           sortedPoints[lastPointPassedIdx],
@@ -642,7 +650,7 @@ export const computeFortuneAlgorithmStepsHorizontalLineSweep = (
           0,
           canvasDimensions.width
         );
-        stepExplanations.push(siteEventExplanation(newParabola));
+        stepExplanations.push(siteEventExplanation(newParabola, lang));
         // given that the beachline is sorted, consider only the first parabola the new one intersects
         for (let i = 0; i < beachLine.length; i++) {
           if (beachLine[i].startPoint.x < newParabola.focus.x && beachLine[i].endPoint.x > newParabola.focus.x) {
@@ -657,7 +665,7 @@ export const computeFortuneAlgorithmStepsHorizontalLineSweep = (
       lastPointPassedIdx += 1;
     }
 
-    addCircleEvents(circleEvents, beachLine, voronoiHalfEdges, stepExplanations, Orientation.Horizontal);
+    addCircleEvents(circleEvents, beachLine, voronoiHalfEdges, stepExplanations, lang, Orientation.Horizontal);
     handleCircleEvents(
       circleEvents,
       beachLine,
@@ -665,6 +673,7 @@ export const computeFortuneAlgorithmStepsHorizontalLineSweep = (
       completeEdges,
       sweepLineY,
       stepExplanations,
+      lang,
       Orientation.Horizontal
     );
     circleEvents = removeFalseCircleEvents(circleEvents, voronoiHalfEdges);
@@ -686,12 +695,16 @@ export const computeFortuneAlgorithmStepsHorizontalLineSweep = (
   }
 
   // delete parabolas and circles that might still be visible when the algorithm ends
-  cleanUpAlgorithmEnd(visualizationSteps);
+  cleanUpAlgorithmEnd(visualizationSteps, lang);
 
   return visualizationSteps;
 };
 
-export const computeFortuneAlgorithmStepsVerticalLineSweep = (points: Point[], canvasDimensions: CanvasDimensions) => {
+export const computeFortuneAlgorithmStepsVerticalLineSweep = (
+  points: Point[],
+  canvasDimensions: CanvasDimensions,
+  lang: Language
+) => {
   const visualizationSteps: VisualizationStep[] = [];
   const beachLine: IParabolaForAlg[] = [];
   const voronoiHalfEdges: IVoronoiHalfEdge[] = [];
@@ -720,7 +733,7 @@ export const computeFortuneAlgorithmStepsVerticalLineSweep = (points: Point[], c
       if (lastPointPassedIdx == 0) {
         const firstParabola = getParabolaFromYCoordinates(sortedPoints[0], sweepLineX, 0, -canvasDimensions.height);
         beachLine.push(firstParabola);
-        stepExplanations.push(siteEventExplanation(firstParabola));
+        stepExplanations.push(siteEventExplanation(firstParabola, lang));
       } else {
         const newParabola = getParabolaFromYCoordinates(
           sortedPoints[lastPointPassedIdx],
@@ -728,7 +741,7 @@ export const computeFortuneAlgorithmStepsVerticalLineSweep = (points: Point[], c
           0,
           -canvasDimensions.height
         );
-        stepExplanations.push(siteEventExplanation(newParabola));
+        stepExplanations.push(siteEventExplanation(newParabola, lang));
 
         // given that the beachline is sorted, consider only the first parabola the new one intersects
         for (let i = 0; i < beachLine.length; i++) {
@@ -744,8 +757,8 @@ export const computeFortuneAlgorithmStepsVerticalLineSweep = (points: Point[], c
       lastPointPassedIdx += 1;
     }
 
-    addCircleEvents(circleEvents, beachLine, voronoiHalfEdges, stepExplanations);
-    handleCircleEvents(circleEvents, beachLine, voronoiHalfEdges, completeEdges, sweepLineX, stepExplanations);
+    addCircleEvents(circleEvents, beachLine, voronoiHalfEdges, stepExplanations, lang);
+    handleCircleEvents(circleEvents, beachLine, voronoiHalfEdges, completeEdges, sweepLineX, stepExplanations, lang);
     circleEvents = removeFalseCircleEvents(circleEvents, voronoiHalfEdges);
 
     visualizationSteps.push(
@@ -763,7 +776,7 @@ export const computeFortuneAlgorithmStepsVerticalLineSweep = (points: Point[], c
   }
 
   // delete parabolas and circles that might still be visible when the algorithm ends
-  cleanUpAlgorithmEnd(visualizationSteps);
+  cleanUpAlgorithmEnd(visualizationSteps, lang);
 
   return visualizationSteps;
 };

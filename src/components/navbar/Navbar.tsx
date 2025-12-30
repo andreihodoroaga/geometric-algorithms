@@ -4,9 +4,12 @@ import { useState } from "react";
 
 import { RxHamburgerMenu } from "react-icons/rx";
 import { NavLink } from "react-router-dom";
+import { useLanguage } from "../../shared/i18n";
+import LanguageToggle from "../language-toggle/LanguageToggle";
 
 export default function Navbar() {
   const [showAlgorithms, setShowAlgorithms] = useState(false);
+  const { t } = useLanguage();
 
   const hideAlgorithms = () => {
     setShowAlgorithms(false);
@@ -19,36 +22,37 @@ export default function Navbar() {
           to={`/geometric-algorithms`}
           className={({ isActive, isPending }) => (isPending ? "pending" : isActive ? "active" : "")}
         >
-          Home
+          {t("home")}
         </NavLink>
       </div>
       <ul className={showAlgorithms ? "flex" : "hidden"}>
         <li>
           <NavLink to={`/geometric-algorithms/convex-hull`} onClick={hideAlgorithms}>
-            Acoperire convexa
+            {t("convexHull")}
           </NavLink>
         </li>
         <li>
           <NavLink to={`/geometric-algorithms/triangulation`} onClick={hideAlgorithms}>
-            Triangularea poligoanelor
+            {t("triangulation")}
           </NavLink>
         </li>
         <li>
           <NavLink to={`/geometric-algorithms/duality`} onClick={hideAlgorithms}>
-            Dualitate
+            {t("duality")}
           </NavLink>
         </li>
         <li>
           <NavLink to={`/geometric-algorithms/voronoi-diagram`} onClick={hideAlgorithms}>
-            Diagrama Voronoi
+            {t("voronoiDiagram")}
           </NavLink>
         </li>
         <li>
           <NavLink to={`/geometric-algorithms/trapezoidal-map`} onClick={hideAlgorithms}>
-            Harta trapezoidala
+            {t("trapezoidalMap")}
           </NavLink>
         </li>
       </ul>
+      <LanguageToggle />
       <div className="hamburger" onClick={() => setShowAlgorithms(!showAlgorithms)}>
         <RxHamburgerMenu />
       </div>

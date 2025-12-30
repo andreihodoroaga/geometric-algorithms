@@ -9,6 +9,7 @@ import { checkValidPolygon, computeTriangulationSteps, isPolygonMonotone } from 
 import { Menu, MenuItem } from "@szhsin/react-menu";
 import Button from "../button/Button";
 import { useState } from "react";
+import { useLanguage } from "../../shared/i18n";
 
 const getLastStackStatus = (steps: VisualizationStep[], currentStepIndex: number | null) => {
   if (!currentStepIndex) {
@@ -29,20 +30,20 @@ const getLastStackStatus = (steps: VisualizationStep[], currentStepIndex: number
 
 export default function Triangulation() {
   const [selectedPolygonType, setSelectedPolygonType] = useState(Axis.y);
+  const { t, language } = useLanguage();
 
-  // Returns the visualization steps or an error
   const computeVisualizationSteps = (points: Point[]) => {
     const pointsForAlgorithm = determinePointsForAlgorithm(points);
     if (points.length < 3) {
-      throw new Error("Este nevoie de minim 2 puncte pentru a determina triangularea.");
+      throw new Error(t("needAtLeast3Points"));
     }
     if (!checkValidPolygon(points)) {
-      throw new Error("Punctele nu formeaza un poligon valid!");
+      throw new Error(t("pointsNotValidPolygon"));
     }
     if (!isPolygonMonotone(pointsForAlgorithm, selectedPolygonType)) {
-      throw new Error(`Poligonul nu e ${selectedPolygonType}-monoton!`);
+      throw new Error(t("polygonNotMonotone", { axis: selectedPolygonType }));
     }
-    const visualizationSteps = computeTriangulationSteps(pointsForAlgorithm, selectedPolygonType);
+    const visualizationSteps = computeTriangulationSteps(pointsForAlgorithm, selectedPolygonType, language);
     return visualizationSteps;
   };
 
@@ -56,7 +57,7 @@ export default function Triangulation() {
         <Button
           content={`${selectedPolygonType}-monoton`}
           dropdownBtn={true}
-          tooltip="Tipul de poligon"
+          tooltip={t("polygonType")}
           showTooltip={true}
         />
       }
@@ -77,7 +78,7 @@ export default function Triangulation() {
   return (
     <VisualizationEngine
       computeVisualizationSteps={computeVisualizationSteps}
-      explanationsTitle="Triangulare"
+      explanationsTitle={t("triangulation")}
       mode={selectedPolygonType === Axis.x ? CanvasMode.xMonotonePolygon : CanvasMode.yMonotonePolygon}
       ExplanationsExtra={extraExplanation}
     >

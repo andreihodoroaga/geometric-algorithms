@@ -21,12 +21,14 @@ import {
   pointsResetToInitialColor,
   sortList,
 } from "../../shared/util";
+import { Language } from "../../shared/i18n";
+import { getTranslation } from "../../shared/i18n/algorithmTranslations";
 
-export const computeTriangulationSteps = (points: Point[], polygonType: Axis) => {
+export const computeTriangulationSteps = (points: Point[], polygonType: Axis, lang: Language) => {
   const algorithmGraphicIndications: VisualizationStep[] = [];
 
   if (points.length == 3) {
-    algorithmGraphicIndications.push({ explanation: "Poligonul dat este deja un triunghi." });
+    algorithmGraphicIndications.push({ explanation: getTranslation(lang, "polygonAlreadyTriangle") });
     return algorithmGraphicIndications;
   }
 
@@ -38,10 +40,10 @@ export const computeTriangulationSteps = (points: Point[], polygonType: Axis) =>
     points,
     polygonType === Axis.x ? comparatorPointsByXAscending : comparatorPointsByYDescending
   );
-  algorithmGraphicIndications.push({ explanation: sortStepExplanation(sortedPolygonPoints, polygonType) });
+  algorithmGraphicIndications.push({ explanation: sortStepExplanation(sortedPolygonPoints, polygonType, lang) });
 
   let pointsStack = [sortedPolygonPoints[0], sortedPolygonPoints[1]];
-  algorithmGraphicIndications.push(initializeStackStep(pointsStack));
+  algorithmGraphicIndications.push(initializeStackStep(pointsStack, lang));
 
   for (let i = 2; i < points.length - 1; i++) {
     const currentPoint = sortedPolygonPoints[i];
@@ -50,52 +52,49 @@ export const computeTriangulationSteps = (points: Point[], polygonType: Axis) =>
       (isPointInList(currentPoint, firstChain) && isPointInList(pointsStack[pointsStack.length - 1], firstChain)) ||
       (isPointInList(currentPoint, secondChain) && isPointInList(pointsStack[pointsStack.length - 1], secondChain));
     if (inSameList) {
-      algorithmGraphicIndications.push(pointAndTopOfStackInSameChainStep(currentPoint, pointsStack));
+      algorithmGraphicIndications.push(pointAndTopOfStackInSameChainStep(currentPoint, pointsStack, lang));
 
       let lastPointFromStack = pointsStack.pop()!;
-      algorithmGraphicIndications.push(extractTopOfStackStep(pointsStack, lastPointFromStack));
+      algorithmGraphicIndications.push(extractTopOfStackStep(pointsStack, lastPointFromStack, lang));
 
       while (
         pointsStack.length > 0 &&
         isInteriorDiagonal(currentPoint, lastPointFromStack, pointsStack[pointsStack.length - 1], firstChain)
       ) {
         lastPointFromStack = pointsStack.pop()!;
-        algorithmGraphicIndications.push(interiorDiagonalStep(pointsStack, currentPoint, lastPointFromStack));
+        algorithmGraphicIndications.push(interiorDiagonalStep(pointsStack, currentPoint, lastPointFromStack, lang));
       }
 
       pointsStack.push(lastPointFromStack, currentPoint);
       algorithmGraphicIndications.push(
-        insertPointBackInStackStep(pointsStack, currentPoint, lastPointFromStack, "last")
+        insertPointBackInStackStep(pointsStack, currentPoint, lastPointFromStack, "last", lang)
       );
     } else {
-      algorithmGraphicIndications.push(pointsInDifferentChainsStep(currentPoint, pointsStack));
+      algorithmGraphicIndications.push(pointsInDifferentChainsStep(currentPoint, pointsStack, lang));
 
       const pointOnTopOfStack = pointsStack[pointsStack.length - 1];
       while (pointsStack.length > 1) {
         const topOfStack = pointsStack.pop()!;
-        algorithmGraphicIndications.push(addDiagonalDifferentChainsStep(pointsStack, currentPoint, topOfStack));
+        algorithmGraphicIndications.push(addDiagonalDifferentChainsStep(pointsStack, currentPoint, topOfStack, lang));
       }
 
       const topOfStack = pointsStack.pop()!;
-      algorithmGraphicIndications.push(firstPointInStackStep(pointsStack, topOfStack));
+      algorithmGraphicIndications.push(firstPointInStackStep(pointsStack, topOfStack, lang));
 
       pointsStack = [pointOnTopOfStack, currentPoint];
       algorithmGraphicIndications.push(
-        insertPointBackInStackStep(pointsStack, currentPoint, pointOnTopOfStack, "first")
+        insertPointBackInStackStep(pointsStack, currentPoint, pointOnTopOfStack, "first", lang)
       );
     }
 
     algorithmGraphicIndications.push(makeStackPointsLightGreenStep(points, pointsStack, i >= points.length - 2));
   }
 
-  algorithmGraphicIndications.push(...finalSteps(pointsStack, sortedPolygonPoints));
+  algorithmGraphicIndications.push(...finalSteps(pointsStack, sortedPolygonPoints, lang));
 
   return algorithmGraphicIndications;
 };
 
-// https://math.stackexchange.com/questions/274712/calculate-on-which-side-of-a-straight-line-is-a-given-point-located
-// 0 -> collinear, <0 -> one side, >0 -> other side
-// we don't really care on which side the point is (use it to determine whether two points are on the same side)
 const calculateOrienationWithRespectToLine = (firstPoint: Point, targetPoint: Point, endPoint: Point) => {
   const x1 = firstPoint.x;
   const y1 = firstPoint.y;
@@ -129,7 +128,6 @@ const checkClosedPolygon = (lines: ILine[]) => {
   return firstPoint.x === lastPoint.x && firstPoint.y === lastPoint.y;
 };
 
-// assumes the points are in trigonometric order
 export const checkValidPolygon = (points: Point[]) => {
   const lines = getLinesFromPoints(points, GREY_COLOR, true);
   if (!checkClosedPolygon(lines)) {
@@ -162,10 +160,6 @@ const comparePointsWithRespectToAxis = (currPoint: Point, nextPoint: Point, prev
   }
 };
 
-// a polygon is monotone with respect to an axis (say the x-axis)
-// if it has only one vertex whose x-coordinate is smaller than both of its neighbours
-// https://cs.stackexchange.com/questions/1577/how-do-i-test-if-a-polygon-is-monotone-with-respect-to-a-line
-// the points are assumed to be in trigonometric order TODO: why?
 export const isPolygonMonotone = (points: Point[], axis: Axis) => {
   const numberOfPoints = points.length;
   let localMins = 0;
@@ -186,12 +180,9 @@ const isFirstPointGreater = (p1: Point, p2: Point, axis: Axis) => {
   return axis === Axis.x ? p1.x > p2.x : p1.y > p2.y;
 };
 
-// assumes points are in either trigonometric or clockwise order
-// first chain will be the left one for the y-monotone case and the upper one for the x-monotone case
 export const splitPolygonInChains = (points: Point[], polygonType: Axis) => {
   const firstChain: Point[] = [];
   const secondChain: Point[] = [];
-  // Determine the topmost and lowest points based on the polygon type
   const greatestCoordPoint = points.reduce((prev, current) =>
     prev && isFirstPointGreater(prev, current, polygonType) ? prev : current
   );
@@ -219,8 +210,6 @@ export const splitPolygonInChains = (points: Point[], polygonType: Axis) => {
     }
   }
 
-  // the firstChain has at least two values (the topmost and lowest points), while the secondChain can have none
-  // if the chains are not in the expected order, swap them
   if (secondChain.length) {
     if (isFirstPointGreater(firstChain[1], secondChain[0], polygonType === Axis.x ? Axis.y : Axis.x)) {
       return [secondChain, firstChain];
@@ -228,7 +217,6 @@ export const splitPolygonInChains = (points: Point[], polygonType: Axis) => {
     return [firstChain, secondChain];
   }
 
-  // if the firstChain contains all points, distinguish if it should be the left/right chain (or upper/lower)
   if (isFirstPointGreater(firstChain[0], firstChain[1], polygonType === Axis.x ? Axis.y : Axis.x)) {
     return [firstChain, secondChain];
   }
@@ -251,22 +239,15 @@ const isInteriorDiagonal = (
   }
 };
 
-const sortStepExplanation = (sortedPoints: Point[], axis: Axis) => {
-  let message = `Varfurile se ordoneaza ${
-    axis === Axis.x ? "crescător" : "descrescător"
-  } după ${axis} (dacă ordinea este egală, se folosește abscisa): `;
-
-  for (let i = 0; i < sortedPoints.length; i++) {
-    if (i > 0) message = message + ", ";
-    message = message + sortedPoints[i].label;
-  }
-
-  return message;
+const sortStepExplanation = (sortedPoints: Point[], axis: Axis, lang: Language) => {
+  const order = axis === Axis.x ? getTranslation(lang, "ascending") : getTranslation(lang, "descending");
+  const pointsList = sortedPoints.map((p) => p.label).join(", ");
+  return getTranslation(lang, "verticesSorted", { order, axis, points: pointsList });
 };
 
-const initializeStackStep = (pointsStack: Point[]): VisualizationStep => {
+const initializeStackStep = (pointsStack: Point[], lang: Language): VisualizationStep => {
   return {
-    explanation: "Se initializeaza stiva cu primele 2 varfuri. ",
+    explanation: getTranslation(lang, "initializeStack"),
     graphicDrawingsStepList: [
       DrawingFactory.point(pointsStack[0], LIGHT_GREEN_COLOR, "focused"),
       DrawingFactory.point(pointsStack[1], LIGHT_GREEN_COLOR, "focused"),
@@ -278,11 +259,12 @@ const initializeStackStep = (pointsStack: Point[]): VisualizationStep => {
   };
 };
 
-const pointAndTopOfStackInSameChainStep = (currentPoint: Point, pointsStack: Point[]) => {
+const pointAndTopOfStackInSameChainStep = (currentPoint: Point, pointsStack: Point[], lang: Language) => {
   return {
-    explanation: `Punctul curent, ${currentPoint.label}, si punctul din varful stivei, ${
-      pointsStack[pointsStack.length - 1].label
-    }, sunt in acelasi lant. `,
+    explanation: getTranslation(lang, "currentAndTopSameChain", {
+      current: currentPoint.label,
+      top: pointsStack[pointsStack.length - 1].label,
+    }),
     graphicDrawingsStepList: [
       DrawingFactory.point(currentPoint, ORANGE_COLOR, "focused"),
       DrawingFactory.point(pointsStack[pointsStack.length - 1], ORANGE_COLOR, "focused"),
@@ -290,9 +272,9 @@ const pointAndTopOfStackInSameChainStep = (currentPoint: Point, pointsStack: Poi
   };
 };
 
-const extractTopOfStackStep = (pointsStack: Point[], lastPointFromStack: Point): VisualizationStep => {
+const extractTopOfStackStep = (pointsStack: Point[], lastPointFromStack: Point, lang: Language): VisualizationStep => {
   return {
-    explanation: `Se extrage varful ${lastPointFromStack.label} din stiva.`,
+    explanation: getTranslation(lang, "extractTop", { label: lastPointFromStack.label }),
     graphicDrawingsStepList: [DrawingFactory.point(lastPointFromStack, RED_COLOR, "focused")],
     customElement: {
       type: "stackStatus",
@@ -304,10 +286,14 @@ const extractTopOfStackStep = (pointsStack: Point[], lastPointFromStack: Point):
 const interiorDiagonalStep = (
   pointsStack: Point[],
   currentPoint: Point,
-  lastPointFromStack: Point
+  lastPointFromStack: Point,
+  lang: Language
 ): VisualizationStep => {
   return {
-    explanation: `Se extrage varful ${lastPointFromStack.label} din stiva pentru ca formeaza cu ${currentPoint.label} diagonala interioara poligonului.`,
+    explanation: getTranslation(lang, "extractedForDiagonal", {
+      extracted: lastPointFromStack.label,
+      current: currentPoint.label,
+    }),
     graphicDrawingsStepList: [
       DrawingFactory.lineFromPoints(currentPoint, lastPointFromStack, GREEN_COLOR),
       DrawingFactory.point(lastPointFromStack, RED_COLOR, "focused"),
@@ -324,12 +310,18 @@ const insertPointBackInStackStep = (
   pointsStack: Point[],
   currentPoint: Point,
   stackPoint: Point,
-  stackPointPosition: "first" | "last"
+  stackPointPosition: "first" | "last",
+  lang: Language
 ): VisualizationStep => {
-  const stackPointPositionMessage = stackPointPosition === "last" ? "ultimul" : "primul";
+  const position =
+    stackPointPosition === "last" ? getTranslation(lang, "lastPosition") : getTranslation(lang, "firstPosition");
 
   return {
-    explanation: `Se insereaza inapoi in stiva ${stackPointPositionMessage} varf extras, ${stackPoint.label} si varful curent ${currentPoint.label}.`,
+    explanation: getTranslation(lang, "insertBackInStack", {
+      position,
+      vertex: stackPoint.label,
+      current: currentPoint.label,
+    }),
     graphicDrawingsStepList: [
       DrawingFactory.point(stackPoint, LIGHT_GREEN_COLOR, "focused"),
       DrawingFactory.point(currentPoint, LIGHT_GREEN_COLOR, "focused"),
@@ -341,11 +333,12 @@ const insertPointBackInStackStep = (
   };
 };
 
-const pointsInDifferentChainsStep = (currentPoint: Point, pointsStack: Point[]) => {
+const pointsInDifferentChainsStep = (currentPoint: Point, pointsStack: Point[], lang: Language) => {
   return {
-    explanation: `Punctul curent, ${currentPoint.label}, si punctul din varful stivei, ${
-      pointsStack[pointsStack.length - 1].label
-    }, sunt in lanturi diferite.`,
+    explanation: getTranslation(lang, "differentChains", {
+      current: currentPoint.label,
+      top: pointsStack[pointsStack.length - 1].label,
+    }),
     graphicDrawingsStepList: [
       DrawingFactory.lineFromPoints(currentPoint, pointsStack[pointsStack.length - 1], ORANGE_COLOR, "dash"),
       DrawingFactory.point(currentPoint, ORANGE_COLOR, "focused"),
@@ -357,10 +350,14 @@ const pointsInDifferentChainsStep = (currentPoint: Point, pointsStack: Point[]) 
 const addDiagonalDifferentChainsStep = (
   pointsStack: Point[],
   currentPoint: Point,
-  topOfStackPoint: Point
+  topOfStackPoint: Point,
+  lang: Language
 ): VisualizationStep => {
   return {
-    explanation: `Se extrage din stiva varful ${topOfStackPoint.label} si se adauga noua diagonala: ${currentPoint.label}${topOfStackPoint.label}.`,
+    explanation: getTranslation(lang, "extractAndAddDiagonal", {
+      vertex: topOfStackPoint.label,
+      diagonal: currentPoint.label + topOfStackPoint.label,
+    }),
     graphicDrawingsStepList: [
       DrawingFactory.lineFromPoints(currentPoint, topOfStackPoint, GREEN_COLOR),
       DrawingFactory.point(topOfStackPoint, RED_COLOR, "focused"),
@@ -373,9 +370,9 @@ const addDiagonalDifferentChainsStep = (
   };
 };
 
-const firstPointInStackStep = (pointsStack: Point[], extractedPoint: Point): VisualizationStep => {
+const firstPointInStackStep = (pointsStack: Point[], extractedPoint: Point, lang: Language): VisualizationStep => {
   return {
-    explanation: `Se extrage din stiva varful ${extractedPoint.label}, dar fiind ultimul, nu se adauga diagonala.`,
+    explanation: getTranslation(lang, "extractLastNoDiagonal", { vertex: extractedPoint.label }),
     graphicDrawingsStepList: [DrawingFactory.point(extractedPoint, RED_COLOR, "focused")],
     customElement: {
       type: "stackStatus",
@@ -384,24 +381,26 @@ const firstPointInStackStep = (pointsStack: Point[], extractedPoint: Point): Vis
   };
 };
 
-const finalSteps = (pointsStack: Point[], sortedPolygonPoints: Point[]) => {
+const finalSteps = (pointsStack: Point[], sortedPolygonPoints: Point[], lang: Language) => {
   const steps: VisualizationStep[] = [];
   const lastPointInSortedList = sortedPolygonPoints[sortedPolygonPoints.length - 1];
 
   if (pointsStack.length > 3) {
     steps.push({
-      explanation: `Se adauga diagonale de la ultimul varf din lista, ${lastPointInSortedList.label}, la varful stivei (exceptand primul si ultimul). `,
+      explanation: getTranslation(lang, "addDiagonalsFromLast", { vertex: lastPointInSortedList.label }),
     });
   }
   for (let i = 1; i < pointsStack.length - 1; i++) {
     steps.push({
-      explanation: `Se adauga diagonala ${lastPointInSortedList.label}${pointsStack[i].label}.`,
+      explanation: getTranslation(lang, "addDiagonal", {
+        diagonal: lastPointInSortedList.label + pointsStack[i].label,
+      }),
       graphicDrawingsStepList: [DrawingFactory.lineFromPoints(lastPointInSortedList, pointsStack[i], GREEN_COLOR)],
     });
   }
 
   steps.push({
-    explanation: "Triangularea este completa.",
+    explanation: getTranslation(lang, "triangulationComplete"),
   });
 
   return steps;

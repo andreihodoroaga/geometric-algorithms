@@ -18,6 +18,8 @@ import {
   RED_COLOR,
   shuffleArray,
 } from "../../shared/util";
+import { Language } from "../../shared/i18n";
+import { getTranslation } from "../../shared/i18n/algorithmTranslations";
 
 type ConvexHullPart = "lower" | "upper";
 
@@ -52,20 +54,19 @@ const getConvexHullPartFinalDrawings = (partVisualizationSteps: VisualizationSte
   );
 };
 
-export const computeGrahamScanSteps = (sortedPoints: Point[]) => {
-  const lowerConvexHullSteps = determineConvexHullPart(sortedPoints, "lower");
-  const upperConvexHullSteps = determineConvexHullPart(sortedPoints, "upper");
+export const computeGrahamScanSteps = (sortedPoints: Point[], lang: Language) => {
+  const lowerConvexHullSteps = determineConvexHullPart(sortedPoints, "lower", lang);
+  const upperConvexHullSteps = determineConvexHullPart(sortedPoints, "upper", lang);
 
-  // only the last steps from the lower convex hull are needed because the ones for the upper convex hull will already be there
   const lastStep: VisualizationStep = {
-    explanation: "Acoperirea convexa este completa.",
+    explanation: getTranslation(lang, "convexHullComplete"),
     graphicDrawingsStepList: getConvexHullPartFinalDrawings(lowerConvexHullSteps),
   };
 
   return [...lowerConvexHullSteps, ...upperConvexHullSteps, lastStep];
 };
 
-export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) => {
+export const determineConvexHullPart = (points: Point[], part: ConvexHullPart, lang: Language) => {
   if (part === "upper") {
     points = [...points].reverse();
   }
@@ -74,19 +75,15 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
   const convexHullPart = [points[0], points[1]];
 
   let stepExplanation =
-    "Punctele au fost sortate lexicografic. Frontiera inferioara este initializata cu punctele " +
-    convexHullPart[0].label +
-    " si " +
-    convexHullPart[1].label +
-    ". ";
-  if (part === "upper") {
-    stepExplanation =
-      "Analog, se determina frontiera superioara, care se initializeaza cu punctele " +
-      convexHullPart[0].label +
-      " si " +
-      convexHullPart[1].label +
-      ". ";
-  }
+    part === "upper"
+      ? getTranslation(lang, "similarlyUpperBoundary", {
+          p1: convexHullPart[0].label,
+          p2: convexHullPart[1].label,
+        })
+      : getTranslation(lang, "pointsSortedLexLower", {
+          p1: convexHullPart[0].label,
+          p2: convexHullPart[1].label,
+        });
 
   algorithmGraphicIndications.push({
     explanation: stepExplanation,
@@ -95,7 +92,7 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
 
   for (let i = 2; i < points.length; i++) {
     algorithmGraphicIndications.push({
-      explanation: "Punctul " + points[i].label + " este adaugat in lista.",
+      explanation: getTranslation(lang, "pointAddedToList", { label: points[i].label }),
       graphicDrawingsStepList: [DrawingFactory.point(points[i], ORANGE_COLOR)],
     });
 
@@ -107,26 +104,27 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
         const temporaryConvexHullPart = convexHullPart.slice();
         temporaryConvexHullPart.push(points[i]);
         const visualizationStep = {
-          explanation:
-            "Punctele " +
-            secondLastPoint.label +
-            ", " +
-            lastPoint.label +
-            " si " +
-            points[i].label +
-            " formeaza un viraj la stanga, deci niciun element nu este sters. ",
+          explanation: getTranslation(lang, "leftTurnNoDelete", {
+            p1: secondLastPoint.label,
+            p2: lastPoint.label,
+            p3: points[i].label,
+          }),
           graphicDrawingsStepList: convexHullUpdatedSteps(points, temporaryConvexHullPart),
         };
         algorithmGraphicIndications.push(visualizationStep);
         break;
       } else {
-        stepExplanation = "Punctele " + secondLastPoint.label + ", " + lastPoint.label + " si " + points[i].label;
+        stepExplanation = getTranslation(lang, "pointsAre", {
+          p1: secondLastPoint.label,
+          p2: lastPoint.label,
+          p3: points[i].label,
+        });
         if (orientation == 0) {
-          stepExplanation += " sunt coliniare";
+          stepExplanation += getTranslation(lang, "areCollinear");
         } else {
-          stepExplanation += " formeaza un viraj la dreapta";
+          stepExplanation += getTranslation(lang, "formRightTurn");
         }
-        stepExplanation += ", deci punctul " + lastPoint.label + " este sters din lista.";
+        stepExplanation += getTranslation(lang, "soPointDeleted", { label: lastPoint.label });
 
         convexHullPart.pop();
         const temporaryConvexHullPart = convexHullPart.slice();
@@ -145,15 +143,11 @@ export const determineConvexHullPart = (points: Point[], part: ConvexHullPart) =
     }
     convexHullPart.push(points[i]);
 
-    let messageConvexHullList = `Frontiera ${part === "lower" ? "inferioara" : "superioara"} contine punctele `;
-    for (let i = 0; i < convexHullPart.length; i++) {
-      messageConvexHullList += convexHullPart[i].label;
-      if (i !== convexHullPart.length - 1) {
-        messageConvexHullList += ", ";
-      } else {
-        messageConvexHullList += ". ";
-      }
-    }
+    const pointsList = convexHullPart.map((p) => p.label).join(", ");
+    const messageConvexHullList =
+      part === "lower"
+        ? getTranslation(lang, "lowerBoundaryContains", { points: pointsList })
+        : getTranslation(lang, "upperBoundaryContains", { points: pointsList });
 
     algorithmGraphicIndications.push({
       explanation: messageConvexHullList,
@@ -181,7 +175,7 @@ const getIndexOfExtremePoint = (pointsOnCanvas: Point[], position: LeftRight) =>
   return extremePointIndex;
 };
 
-export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
+export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[], lang: Language) => {
   const convexHullPoints = [];
   const algorithmGraphicIndications: VisualizationStep[] = [];
 
@@ -191,10 +185,7 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
   convexHullPoints.push(currentPoint);
 
   algorithmGraphicIndications.push({
-    explanation:
-      "Acoperirea convexa se initializeaza cu cel mai mic punct in ordine lexicografica, punctul " +
-      currentPoint.label +
-      ". ",
+    explanation: getTranslation(lang, "convexHullInitSmallest", { label: currentPoint.label }),
     graphicDrawingsStepList: [DrawingFactory.point(currentPoint, GREEN_COLOR, "focused")],
   });
 
@@ -209,7 +200,7 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
 
     pivotPoint = pointsOnCanvas[pivotIndex];
     let visualizationStep: VisualizationStep = {
-      explanation: "Se alege arbitrar punctul " + pivotPoint.label + " drept pivot",
+      explanation: getTranslation(lang, "chooseArbitraryPivot", { label: pivotPoint.label }),
       graphicDrawingsStepList: [
         DrawingFactory.lineFromPoints(currentPoint, pivotPoint, ORANGE_COLOR),
         DrawingFactory.point(currentPoint, GREEN_COLOR),
@@ -221,7 +212,7 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
     for (let i = 0; i < pointsOnCanvas.length; i++) {
       const testedPoint = pointsOnCanvas[i];
       visualizationStep = {
-        explanation: "Punctul " + testedPoint.label + " este ales pentru a fi comparat",
+        explanation: getTranslation(lang, "pointChosenForComparison", { label: testedPoint.label }),
         graphicDrawingsStepList: [DrawingFactory.point(testedPoint, RED_COLOR, "focused")],
       };
       algorithmGraphicIndications.push(visualizationStep);
@@ -229,13 +220,10 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
       const orientation = calculateOrientationForNormalPoints(currentPoint, pivotPoint, testedPoint);
       if (orientation == PointsOrientation.Right) {
         algorithmGraphicIndications.push({
-          explanation:
-            "Punctul " +
-            testedPoint.label +
-            " se afla la dreapta muchiei " +
-            currentPoint.label +
-            pivotPoint.label +
-            ", deci devine noul pivot. ",
+          explanation: getTranslation(lang, "pointRightOfEdgeBecomePivot", {
+            point: testedPoint.label,
+            edge: currentPoint.label + pivotPoint.label,
+          }),
           graphicDrawingsStepList: [
             ...convexHullUpdatedSteps(pointsOnCanvas, convexHullPoints),
             DrawingFactory.lineFromPoints(currentPoint, testedPoint, ORANGE_COLOR),
@@ -248,13 +236,10 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
         pivotIndex = i;
       } else {
         algorithmGraphicIndications.push({
-          explanation:
-            "Punctul " +
-            testedPoint.label +
-            " nu se afla la dreapta muchiei " +
-            currentPoint.label +
-            pivotPoint.label +
-            ", deci nu devine noul pivot. ",
+          explanation: getTranslation(lang, "pointNotRightOfEdge", {
+            point: testedPoint.label,
+            edge: currentPoint.label + pivotPoint.label,
+          }),
           graphicDrawingsStepList: [
             ...convexHullUpdatedSteps(pointsOnCanvas, convexHullPoints),
             DrawingFactory.lineFromPoints(currentPoint, pivotPoint, ORANGE_COLOR),
@@ -273,35 +258,27 @@ export const computeJarvisMarchExecutionSteps = (pointsOnCanvas: Point[]) => {
       currentPointIndex = pivotIndex;
 
       algorithmGraphicIndications.push({
-        explanation: "Punctul " + pivotPoint.label + " se adauga in acoperirea convexa. ",
+        explanation: getTranslation(lang, "pointAddedToConvexHull", { label: pivotPoint.label }),
         graphicDrawingsStepList: convexHullUpdatedSteps(pointsOnCanvas, convexHullPoints),
       });
     }
   }
 
-  let messageConvexHullList = "Acoperirea convexa este formata din punctele: ";
-  for (let i = 0; i < convexHullPoints.length; i++) {
-    messageConvexHullList += convexHullPoints[i].label;
-    if (i != convexHullPoints.length - 1) {
-      messageConvexHullList += ", ";
-    } else {
-      messageConvexHullList += ". ";
-    }
-  }
+  const pointsList = convexHullPoints.map((p) => p.label).join(", ");
   convexHullPoints.push(convexHullPoints[0]);
 
   algorithmGraphicIndications.push({
-    explanation: messageConvexHullList,
+    explanation: getTranslation(lang, "convexHullFormedByPoints", { points: pointsList }),
     graphicDrawingsStepList: convexHullDrawingFromPoints(convexHullPoints),
   });
 
   return algorithmGraphicIndications;
 };
 
-const chanPartialHullVisualizationSteps = (partialHulls: PartialConvexHull[]): VisualizationStep[] => {
+const chanPartialHullVisualizationSteps = (partialHulls: PartialConvexHull[], lang: Language): VisualizationStep[] => {
   return partialHulls.map(({ points, htmlLabel }) => {
     return {
-      explanation: `Se formeaza submultimea ${htmlLabel} cu ${points.length} element${points.length === 1 ? "" : "e"}.`,
+      explanation: getTranslation(lang, "formSubset", { label: htmlLabel, count: points.length }),
       graphicDrawingsStepList: points.map((point) => DrawingFactory.point(point, point.color)),
     };
   });
@@ -324,15 +301,14 @@ const chanPartialHullsPoints = (points: Point[], m: number): Point[][] => {
   return subsets;
 };
 
-const chanPartialHulls = (partialHullsPoints: Point[][]) => {
+const chanPartialHulls = (partialHullsPoints: Point[][], lang: Language) => {
   const partialHulls: PartialConvexHull[] = [];
 
   partialHullsPoints.forEach((pointSubset, i) => {
     let convexHullEdges: ILine[] = [];
 
     if (pointSubset.length > 1) {
-      // this is a hack to get the convex hull for each subset of points, a refactor would be nice
-      const jarvisMarchExecutionSteps = computeJarvisMarchExecutionSteps(pointSubset);
+      const jarvisMarchExecutionSteps = computeJarvisMarchExecutionSteps(pointSubset, lang);
       const pointsOnConvexHull = jarvisMarchExecutionSteps[jarvisMarchExecutionSteps.length - 1]
         .graphicDrawingsStepList!.filter((drawing) => drawing.type === "point" && drawing.color === GREEN_COLOR)
         .map((drawing) => drawing.element) as Point[];
@@ -350,9 +326,9 @@ const chanPartialHulls = (partialHullsPoints: Point[][]) => {
   return partialHulls;
 };
 
-const chanJarvisMarchVisualizationSteps = (partialHulls: PartialConvexHull[]) => {
+const chanJarvisMarchVisualizationSteps = (partialHulls: PartialConvexHull[], lang: Language) => {
   return partialHulls.map((partialHull) => ({
-    explanation: `Este determinata infasuratoarea convexa a submultimii ${partialHull.htmlLabel} folosind Jarvis March.`,
+    explanation: getTranslation(lang, "convexHullDeterminedUsing", { label: partialHull.htmlLabel }),
     graphicDrawingsStepList: partialHull.edges.map((edge) =>
       DrawingFactory.lineFromPoints(edge.startPoint, edge.endPoint, edge.startPoint.color)
     ),
@@ -367,22 +343,38 @@ const pointThatFormsMaxAngle = (partialHullPoints: Point[], prevPk: SimplePoint,
   });
 };
 
-const initialChanAlgorithmSteps = (partialHulls: PartialConvexHull[], points: Point[], m: number) => {
+const initialChanAlgorithmSteps = (
+  partialHulls: PartialConvexHull[],
+  points: Point[],
+  m: number,
+  lang: Language
+) => {
   const result: VisualizationStep[] = [];
 
   result.push({
-    explanation: `Multimea de puncte este partitionata aleator in submultimi cu cel mult ${m} elemente (m = ${m}).`,
+    explanation: getTranslation(lang, "setPartitionedRandomly", { m }),
     graphicDrawingsStepList: [DrawingFactory.clearCanvas, ...pointsResetToInitialColor(points)],
   });
-  result.push(...chanPartialHullVisualizationSteps(partialHulls));
-  result.push(...chanJarvisMarchVisualizationSteps(partialHulls));
+  result.push(...chanPartialHullVisualizationSteps(partialHulls, lang));
+  result.push(...chanJarvisMarchVisualizationSteps(partialHulls, lang));
 
   return result;
 };
 
-const visualizationStepMaxAnglePoint = (point: Point, startPoint: Point, endPoint: Point, subsetLabel: string) => {
+const visualizationStepMaxAnglePoint = (
+  point: Point,
+  startPoint: Point,
+  endPoint: Point,
+  subsetLabel: string,
+  lang: Language
+) => {
   return {
-    explanation: `Din submultimea ${subsetLabel}, punctul ${point.label} formeaza unghiul maxim cu punctele ${startPoint.label} si ${endPoint.label}`,
+    explanation: getTranslation(lang, "fromSubsetMaxAngle", {
+      subset: subsetLabel,
+      point: point.label,
+      p1: startPoint.label,
+      p2: endPoint.label,
+    }),
     graphicDrawingsStepList: [DrawingFactory.point(point, RED_COLOR, "focused")],
   };
 };
@@ -395,17 +387,23 @@ const visualizationStepsMaxAngleSubsets = (
   point: Point,
   startPoint: Point,
   endPoint: Point,
-  q: Point[]
+  q: Point[],
+  lang: Language
 ): VisualizationStep[] => {
   const maxAnglePointLabelsStr = q.map((p) => p.label).join(", ");
 
   return [
     {
-      explanation: `Dintre punctele ${maxAnglePointLabelsStr}, punctul ${point.label} formeaza unghiul maxim cu punctele ${startPoint.label} si ${endPoint.label}.`,
+      explanation: getTranslation(lang, "amongPointsMaxAngle", {
+        points: maxAnglePointLabelsStr,
+        point: point.label,
+        p1: startPoint.label,
+        p2: endPoint.label,
+      }),
       graphicDrawingsStepList: [DrawingFactory.point(point, GREEN_COLOR, "focused")],
     },
     {
-      explanation: `Punctul ${point.label} este adaugat in lista de puncte.`,
+      explanation: getTranslation(lang, "pointAddedToPointsList", { label: point.label }),
       graphicDrawingsStepList: [
         ...pointsResetToInitialColor(q),
         DrawingFactory.point(endPoint, GREEN_COLOR),
@@ -416,19 +414,20 @@ const visualizationStepsMaxAngleSubsets = (
   ];
 };
 
-const chanAlgorithmInitialPointsStep = (p1: Point) => ({
-  explanation: `Sunt adaugate in lista punctele P0(0, -inf) si ${p1.label} (cel mai din dreapta punct).`,
+const chanAlgorithmInitialPointsStep = (p1: Point, lang: Language) => ({
+  explanation: getTranslation(lang, "addedP0AndRightmost", { label: p1.label }),
   graphicDrawingsStepList: [DrawingFactory.point(p1, GREEN_COLOR, "focused")],
 });
 
 const chanSubstepFinalVisualizationComplete = (
   points: Point[],
   convexHullPoints: Point[],
-  p1: Point
+  p1: Point,
+  lang: Language
 ): VisualizationStep[] => {
   return [
     {
-      explanation: `Cum noul punct gasit este egal cu punctul initial (${p1.label}), acoperirea convexa este completa.`,
+      explanation: getTranslation(lang, "newPointEqualsInitial", { label: p1.label }),
     },
     {
       graphicDrawingsStepList: [
@@ -440,15 +439,20 @@ const chanSubstepFinalVisualizationComplete = (
   ];
 };
 
-const chanSubstepFinalVisualizationIncomplete = (m: number) => {
+const chanSubstepFinalVisualizationIncomplete = (m: number, lang: Language) => {
   return [
     {
-      explanation: `La aceasta iteratie (m = ${m}), nu au fost descoperite toate punctele de pe infasuratoare.`,
+      explanation: getTranslation(lang, "iterationNotAllFound", { m }),
     },
   ];
 };
 
-const chanAlgorithmSubstep = (points: Point[], partialHulls: PartialConvexHull[], m: number) => {
+const chanAlgorithmSubstep = (
+  points: Point[],
+  partialHulls: PartialConvexHull[],
+  m: number,
+  lang: Language
+) => {
   const visualizationSteps: VisualizationStep[] = [];
   const p0 = {
     x: 0,
@@ -459,7 +463,7 @@ const chanAlgorithmSubstep = (points: Point[], partialHulls: PartialConvexHull[]
   const p1 = points[getIndexOfExtremePoint(points, "right")];
   const p: Point[] = [p0, p1];
 
-  visualizationSteps.push(chanAlgorithmInitialPointsStep(p1));
+  visualizationSteps.push(chanAlgorithmInitialPointsStep(p1, lang));
 
   for (let k = 1; k <= m; k++) {
     const q: Point[] = [];
@@ -468,25 +472,25 @@ const chanAlgorithmSubstep = (points: Point[], partialHulls: PartialConvexHull[]
       const qi = pointThatFormsMaxAngle(partialHulls[i].points, p[k - 1], p[k]);
       q.push(qi);
 
-      visualizationSteps.push(visualizationStepMaxAnglePoint(qi, p[k - 1], p[k], partialHulls[i].htmlLabel));
+      visualizationSteps.push(visualizationStepMaxAnglePoint(qi, p[k - 1], p[k], partialHulls[i].htmlLabel, lang));
     }
 
     const pkNext = pointThatFormsMaxAngle(q, p[k - 1], p[k]);
     p.push(pkNext);
 
-    visualizationSteps.push(...visualizationStepsMaxAngleSubsets(pkNext, p[k - 1], p[k], q));
+    visualizationSteps.push(...visualizationStepsMaxAngleSubsets(pkNext, p[k - 1], p[k], q, lang));
 
     if (pkNext.label === p1.label) {
-      visualizationSteps.push(...chanSubstepFinalVisualizationComplete(points, p.slice(1), p1));
+      visualizationSteps.push(...chanSubstepFinalVisualizationComplete(points, p.slice(1), p1, lang));
       return [p, visualizationSteps];
     }
   }
 
-  visualizationSteps.push(...chanSubstepFinalVisualizationIncomplete(m));
+  visualizationSteps.push(...chanSubstepFinalVisualizationIncomplete(m, lang));
   return [null, visualizationSteps];
 };
 
-export const computeChanExecutionSteps = (points: Point[]) => {
+export const computeChanExecutionSteps = (points: Point[], lang: Language) => {
   const visualizationSteps: VisualizationStep[] = [];
 
   let t = 1;
@@ -496,14 +500,14 @@ export const computeChanExecutionSteps = (points: Point[]) => {
     const m = Math.min(2 ** (t + 1), points.length);
 
     const partialHullsPoints = chanPartialHullsPoints(points, m);
-    const partialHulls = chanPartialHulls(partialHullsPoints);
+    const partialHulls = chanPartialHulls(partialHullsPoints, lang);
 
-    const [convexHullPoints, substepsVisualizationSteps] = chanAlgorithmSubstep(points, partialHulls, m);
+    const [convexHullPoints, substepsVisualizationSteps] = chanAlgorithmSubstep(points, partialHulls, m, lang);
     if (convexHullPoints) {
       running = false;
     }
 
-    visualizationSteps.push(...initialChanAlgorithmSteps(partialHulls, points, m));
+    visualizationSteps.push(...initialChanAlgorithmSteps(partialHulls, points, m, lang));
     visualizationSteps.push(...(substepsVisualizationSteps as VisualizationStep[]));
 
     t++;

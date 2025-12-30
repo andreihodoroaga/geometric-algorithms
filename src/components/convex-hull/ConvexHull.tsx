@@ -16,6 +16,7 @@ import {
   computeGrahamScanSteps,
   computeJarvisMarchExecutionSteps,
 } from "./convex-hull-algorithm";
+import { useLanguage } from "../../shared/i18n";
 
 enum ConvexHullAlgorithms {
   GrahamScan = "Graham Scan",
@@ -25,20 +26,21 @@ enum ConvexHullAlgorithms {
 
 export default function ConvexHull() {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState(ConvexHullAlgorithms.GrahamScan);
+  const { t, language } = useLanguage();
 
   const computeVisualizationSteps = (points: Point[]) => {
     if (points.length < 2) {
-      throw new Error("E nevoie de minim 2 puncte!");
+      throw new Error(t("needAtLeast2Points"));
     }
     const pointsForAlgorithm = determinePointsForAlgorithm(points);
 
     if (selectedAlgorithm === ConvexHullAlgorithms.GrahamScan) {
       const sortedPointsForAlgorithm = sortList(pointsForAlgorithm, comparatorPointsByXAscending);
-      return computeGrahamScanSteps(sortedPointsForAlgorithm);
+      return computeGrahamScanSteps(sortedPointsForAlgorithm, language);
     } else if (selectedAlgorithm === ConvexHullAlgorithms.JarvisMarch) {
-      return computeJarvisMarchExecutionSteps(pointsForAlgorithm);
+      return computeJarvisMarchExecutionSteps(pointsForAlgorithm, language);
     }
-    return computeChanExecutionSteps(pointsForAlgorithm);
+    return computeChanExecutionSteps(pointsForAlgorithm, language);
   };
 
   return (
@@ -53,7 +55,7 @@ export default function ConvexHull() {
             content={selectedAlgorithm}
             dropdownBtn={true}
             extraClass="algorithm-selector"
-            tooltip="Algoritm"
+            tooltip={t("algorithm")}
             showTooltip={true}
           />
         }

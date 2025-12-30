@@ -19,6 +19,8 @@ import {
   TrapezoidPoint,
   TrapezoidSegment,
 } from "./models";
+import { Language } from "../../shared/i18n";
+import { getTranslation } from "../../shared/i18n/algorithmTranslations";
 
 export const getSegmentsFromPoints = (points: Point[]) => {
   const segments: TrapezoidSegment[] = [];
@@ -204,12 +206,13 @@ export const extendPoint = (
   top: TrapezoidSegment,
   bottom: TrapezoidSegment,
   algorithmGraphicIndications: VisualizationStep[],
-  canvasHeight: number
+  canvasHeight: number,
+  lang: Language
 ) => {
   point.extensionTop = top;
   point.extensionBottom = bottom;
   algorithmGraphicIndications.push({
-    explanation: "Se adauga extensia punctului " + point.letter,
+    explanation: getTranslation(lang, "addPointExtension", { point: point.letter }),
     graphicDrawingsStepList: [DrawingFactory.line(getExtensionLine(point, canvasHeight, "black")!)],
   });
 };
@@ -220,7 +223,8 @@ export const divideHorizontallySameTrapezoid = (
   algorithmSegments: TrapezoidSegment[],
   endpointsOfExistingSegments: TrapezoidPoint[],
   algorithmGraphicIndications: VisualizationStep[],
-  canvasHeight: number
+  canvasHeight: number,
+  lang: Language
 ) => {
   const leftTrapezoid = new Trapezoid(
     trapezoid.topEdge,
@@ -280,18 +284,12 @@ export const divideHorizontallySameTrapezoid = (
   leaf.leftNode = leftTrapezoidNode;
   leaf.rightNode = rightEndpointNode;
 
+  const newTrapezoids = [leftTrapezoid.count, upTrapezoid.count, downTrapezoid.count, rightTrapezoid.count].join(", ");
   const step = {
-    explanation:
-      "Trapezul " +
-      trapezoid.count +
-      " este eliminat si este inlocuit cu trapezele nou aparute: " +
-      leftTrapezoid.count +
-      ", " +
-      upTrapezoid.count +
-      ", " +
-      downTrapezoid.count +
-      ", " +
-      rightTrapezoid.count,
+    explanation: getTranslation(lang, "trapezoidRemovedReplaced", {
+      old: trapezoid.count,
+      new: newTrapezoids,
+    }),
     graphicDrawingsStepList: [
       ...getCurrentStateOfMapSteps(endpointsOfExistingSegments, algorithmSegments, canvasHeight),
       getTrapezoidForCanvas(leftTrapezoid, canvasHeight),
@@ -407,12 +405,13 @@ export const updatePointExtension = (
   top: TrapezoidSegment | null,
   bottom: TrapezoidSegment | null,
   algorithmGraphicIndications: VisualizationStep[],
-  canvasHeight: number
+  canvasHeight: number,
+  lang: Language
 ) => {
   point.extensionTop = top;
   point.extensionBottom = bottom;
   algorithmGraphicIndications.push({
-    explanation: "Se actualizeaza extensia punctului " + point.letter,
+    explanation: getTranslation(lang, "updatePointExtension", { point: point.letter }),
     graphicDrawingsStepList: [DrawingFactory.line(getExtensionLine(point, canvasHeight, RED_COLOR)!)],
   });
 };

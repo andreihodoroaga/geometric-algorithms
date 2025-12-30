@@ -5,6 +5,7 @@ import { CanvasDimensions, CanvasMode } from "../canvas/helpers";
 import VisualizationEngine, { ExplanationsExtraProps } from "../visualization-engine/VisualizationEngine";
 import Graph from "./Graph";
 import { computeTrapezoidalMapSteps } from "./trapezoidal-map-algorithm";
+import { useLanguage } from "../../shared/i18n";
 import "./TrapezoidalMap.scss";
 
 const getCurrentTreeData = (steps: VisualizationStep[], currentStepIndex: number | null) => {
@@ -22,9 +23,11 @@ const getCurrentTreeData = (steps: VisualizationStep[], currentStepIndex: number
 };
 
 export default function TrapezoidalMap() {
+  const { t, language } = useLanguage();
+
   const computeVisualizationSteps = (points: Point[], canvasDimensions: CanvasDimensions) => {
     const pointsForAlg = points.map(convertPointBetweenAlgorithmAndCanvas);
-    return computeTrapezoidalMapSteps(pointsForAlg, canvasDimensions);
+    return computeTrapezoidalMapSteps(pointsForAlg, canvasDimensions, language);
   };
 
   const GraphVisualizer = ({ steps, currentStepIndex }: ExplanationsExtraProps) => {
@@ -47,7 +50,7 @@ export default function TrapezoidalMap() {
   return (
     <VisualizationEngine
       computeVisualizationSteps={computeVisualizationSteps}
-      explanationsTitle="Harta trapezoidala"
+      explanationsTitle={t("trapezoidalMap")}
       mode={CanvasMode.segments}
       ExplanationsExtra={GraphVisualizer}
     ></VisualizationEngine>

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useLanguage } from "../../shared/i18n";
 import "./Explanations.scss";
 
 interface ExplanationsProps {
@@ -8,6 +9,7 @@ interface ExplanationsProps {
 
 export default function Explanations({ explanations, algorithm }: ExplanationsProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     // https://dev.to/forksofpower/autoscrolling-lists-with-react-hooks-10o7
@@ -22,7 +24,9 @@ export default function Explanations({ explanations, algorithm }: ExplanationsPr
 
   return (
     <div className="explanations-container">
-      <h2 className="explanations-title">Pasi executie {algorithm}</h2>
+      <h2 className="explanations-title">
+        {t("executionSteps")} {algorithm}
+      </h2>
       <div className="explanation-list">
         {explanations.map((explanation, idx) => (
           <p

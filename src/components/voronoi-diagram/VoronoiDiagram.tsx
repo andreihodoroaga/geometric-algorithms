@@ -5,6 +5,7 @@ import { Orientation, computeFortuneAlgorithmSteps } from "./fortune-algorithm";
 import Button from "../button/Button";
 import { useState } from "react";
 import { Menu, MenuItem } from "@szhsin/react-menu";
+import { useLanguage } from "../../shared/i18n";
 
 const LS_ORIENTATION_KEY = "Voronoi_Orientation";
 
@@ -12,15 +13,20 @@ export default function VoronoiDiagram() {
   const [orientation, setOrientation] = useState<Orientation>(
     (localStorage.getItem(LS_ORIENTATION_KEY) as Orientation) ?? Orientation.Vertical
   );
+  const { t, language } = useLanguage();
 
   const computeVisualizationSteps = (points: Point[], canvasDimensions: CanvasDimensions) => {
     const pointsForAlg = points.map((p) => convertPointBetweenAlgorithmAndCanvas(p));
-    return computeFortuneAlgorithmSteps(pointsForAlg, canvasDimensions, orientation);
+    return computeFortuneAlgorithmSteps(pointsForAlg, canvasDimensions, orientation, language);
   };
 
   const setOrientationInLS = (or: Orientation) => {
     setOrientation(or);
     localStorage.setItem(LS_ORIENTATION_KEY, or);
+  };
+
+  const getOrientationLabel = (or: Orientation) => {
+    return or === Orientation.Vertical ? t("vertical") : t("horizontal");
   };
 
   return (
@@ -34,9 +40,9 @@ export default function VoronoiDiagram() {
       <Menu
         menuButton={
           <Button
-            content={orientation}
+            content={getOrientationLabel(orientation)}
             dropdownBtn={true}
-            tooltip="Orientarea dreptei de baleiere"
+            tooltip={t("sweepLineOrientation")}
             showTooltip={true}
           />
         }
@@ -44,7 +50,7 @@ export default function VoronoiDiagram() {
       >
         {Object.values(Orientation).map((or) => (
           <MenuItem key={or} className={or === orientation ? "active" : ""} onClick={() => setOrientationInLS(or)}>
-            {or}
+            {getOrientationLabel(or)}
           </MenuItem>
         ))}
       </Menu>
