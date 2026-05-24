@@ -141,7 +141,7 @@ export default function Duality() {
   const dualPointsScaled = pointsScaled(dualPoints);
 
   const primalLinesScaled = dualPointsScaled.map((point) =>
-    getLineFromEquation(point.x / axisMultiplier, -point.y, point.color)
+    getLineFromEquation(point.x / axisMultiplier, point.y, point.color)
   );
 
   const dualLinesScaled = primalPointsScaled.map((point) =>
